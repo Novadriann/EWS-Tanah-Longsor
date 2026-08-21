@@ -1,0 +1,452 @@
+[
+  {
+    "id": "ews_tab_1",
+    "type": "tab",
+    "label": "EWS Margorejo",
+    "disabled": false,
+    "info": "Sistem Peringatan Dini Tanah Longsor - Sampok, Sriharjo, Imogiri, Bantul, DIY"
+  },
+  {
+    "id": "mqtt_broker_1",
+    "type": "mqtt-broker",
+    "name": "Mosquitto Lokal",
+    "broker": "localhost",
+    "port": "1883",
+    "clientid": "",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "autoUnsubscribe": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthPayload": "",
+    "closeTopic": "",
+    "closeQos": "0",
+    "closePayload": "",
+    "willTopic": "",
+    "willQos": "0",
+    "willPayload": ""
+  },
+  {
+    "id": "sqlite_db_1",
+    "type": "sqlitedb",
+    "db": "ews_data.db",
+    "mode": "RWC"
+  },
+  {
+    "id": "ws_listener_1",
+    "type": "websocket-listener",
+    "path": "/ws/ews",
+    "wholemsg": "false"
+  },
+
+  {
+    "id": "comment_ingestion",
+    "type": "comment",
+    "z": "ews_tab_1",
+    "name": "📡 DATA INGESTION & PARSING",
+    "info": "Menerima data LoRa dari MQTT dan parsing ke JSON",
+    "x": 180,
+    "y": 40,
+    "wires": []
+  },
+
+  {
+    "id": "mqtt_in_1",
+    "type": "mqtt in",
+    "z": "ews_tab_1",
+    "name": "📡 ews/lora_data",
+    "topic": "ews/lora_data",
+    "qos": "0",
+    "datatype": "utf8",
+    "broker": "mqtt_broker_1",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 150,
+    "y": 100,
+    "wires": [
+      ["parse_func_1"]
+    ]
+  },
+
+  {
+    "id": "parse_func_1",
+    "type": "function",
+    "z": "ews_tab_1",
+    "name": "⚙️ Parse Data LoRa",
+    "func": "// Parse format: NODE_1,SOIL:65,HALL:1,MAG:0,TIP:12,TILT:26.91,RAIN:44.04,RSSI:-65,SNR:8.5\nvar raw = msg.payload;\n\ntry {\n    var parts = raw.split(',');\n    if (parts.length < 6) {\n        node.warn('Format data tidak valid: ' + raw);\n        return null;\n    }\n    \n    var data = {\n        node: parts[0].trim()\n    };\n    \n    // Parse key:value pairs\n    for (var i = 1; i < parts.length; i++) {\n        var kv = parts[i].split(':');\n        if (kv.length === 2) {\n            var key = kv[0].trim().toLowerCase();\n            var val = kv[1].trim();\n            \n            if (key === 'soil' || key === 'hall' || key === 'mag' || key === 'tip' || key === 'rssi') {\n                data[key] = parseInt(val) || 0;\n            } else if (key === 'tilt' || key === 'rain' || key === 'snr') {\n                data[key] = parseFloat(val) || 0;\n            }\n        }\n    }\n    \n    // Tambahkan timestamp\n    data.timestamp = new Date().toISOString();\n    \n    // Pastikan semua field ada\n    data.soil = data.soil || 0;\n    data.hall = data.hall || 0;\n    data.mag = data.mag || 0;\n    data.tip = data.tip || 0;\n    data.tilt = data.tilt || 0;\n    data.rain = data.rain || 0;\n    data.rssi = data.rssi || 0;\n    data.snr = data.snr || 0;\n    \n    msg.payload = data;\n    return msg;\n    \n} catch (e) {\n    node.error('Error parsing: ' + e.message);\n    return null;\n}",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 390,
+    "y": 100,
+    "wires": [
+      ["ws_out_1", "build_insert_1", "alert_func_1", "debug_1"]
+    ]
+  },
+
+  {
+    "id": "debug_1",
+    "type": "debug",
+    "z": "ews_tab_1",
+    "name": "🔍 Debug Data",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "x": 630,
+    "y": 40,
+    "wires": []
+  },
+
+  {
+    "id": "comment_websocket",
+    "type": "comment",
+    "z": "ews_tab_1",
+    "name": "🌐 WEBSOCKET (Real-time ke Web)",
+    "info": "Kirim data real-time ke dashboard web via WebSocket",
+    "x": 190,
+    "y": 190,
+    "wires": []
+  },
+
+  {
+    "id": "ws_out_1",
+    "type": "websocket out",
+    "z": "ews_tab_1",
+    "name": "🌐 WebSocket /ws/ews",
+    "server": "ws_listener_1",
+    "client": "",
+    "x": 680,
+    "y": 220,
+    "wires": []
+  },
+
+  {
+    "id": "comment_database",
+    "type": "comment",
+    "z": "ews_tab_1",
+    "name": "💾 DATABASE (Simpan ke SQLite)",
+    "info": "Simpan semua data sensor ke database untuk historis",
+    "x": 190,
+    "y": 300,
+    "wires": []
+  },
+
+  {
+    "id": "build_insert_1",
+    "type": "function",
+    "z": "ews_tab_1",
+    "name": "💾 Build INSERT SQL",
+    "func": "var d = msg.payload;\n\nmsg.topic = \"INSERT INTO sensor_data (node, soil, hall, mag, tip, tilt, rain, rssi, snr, timestamp) VALUES ('\" \n    + d.node + \"', \" \n    + d.soil + \", \" \n    + d.hall + \", \" \n    + d.mag + \", \" \n    + d.tip + \", \" \n    + d.tilt + \", \" \n    + (d.rain || 0) + \", \" \n    + (d.rssi || 0) + \", \" \n    + (d.snr || 0) + \", '\" \n    + d.timestamp + \"')\";\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 660,
+    "y": 340,
+    "wires": [
+      ["sqlite_insert_1"]
+    ]
+  },
+
+  {
+    "id": "sqlite_insert_1",
+    "type": "sqlite",
+    "z": "ews_tab_1",
+    "name": "💾 SQLite Insert",
+    "mydb": "sqlite_db_1",
+    "sqlquery": "msg.topic",
+    "sql": "",
+    "x": 890,
+    "y": 340,
+    "wires": [
+      []
+    ]
+  },
+
+  {
+    "id": "inject_startup_1",
+    "type": "inject",
+    "z": "ews_tab_1",
+    "name": "🚀 Startup (Buat Tabel)",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "0.5",
+    "topic": "CREATE TABLE IF NOT EXISTS sensor_data (id INTEGER PRIMARY KEY AUTOINCREMENT, node TEXT, soil INTEGER, hall INTEGER, mag INTEGER, tip INTEGER, tilt REAL, rain REAL, rssi INTEGER, snr REAL, timestamp TEXT)",
+    "x": 180,
+    "y": 420,
+    "wires": [
+      ["sqlite_create_1"]
+    ]
+  },
+
+  {
+    "id": "sqlite_create_1",
+    "type": "sqlite",
+    "z": "ews_tab_1",
+    "name": "💾 SQLite Create Table",
+    "mydb": "sqlite_db_1",
+    "sqlquery": "msg.topic",
+    "sql": "",
+    "x": 470,
+    "y": 420,
+    "wires": [
+      ["debug_startup_1"]
+    ]
+  },
+
+  {
+    "id": "debug_startup_1",
+    "type": "debug",
+    "z": "ews_tab_1",
+    "name": "✅ Tabel Siap",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "'Database EWS siap! Tabel sensor_data berhasil dibuat/diperiksa.'",
+    "targetType": "jsonata",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 700,
+    "y": 420,
+    "wires": []
+  },
+
+  {
+    "id": "comment_telegram",
+    "type": "comment",
+    "z": "ews_tab_1",
+    "name": "📱 TELEGRAM ALERT (dengan Cooldown 5 menit)",
+    "info": "Kirim peringatan ke Telegram saat kemiringan >= 45 derajat.\nCooldown 5 menit per node untuk menghindari spam.",
+    "x": 230,
+    "y": 510,
+    "wires": []
+  },
+
+  {
+    "id": "alert_func_1",
+    "type": "function",
+    "z": "ews_tab_1",
+    "name": "🚨 Alert Logic (Cooldown 5 menit)",
+    "func": "var data = msg.payload;\nvar nodeId = data.node;\nvar tilt = data.tilt;\nvar THRESHOLD = 45;  // Derajat\nvar COOLDOWN_MS = 5 * 60 * 1000;  // 5 menit\n\n// Cek apakah melebihi threshold\nif (tilt >= THRESHOLD) {\n    // Cek cooldown per node\n    var lastAlert = flow.get('lastAlert_' + nodeId) || 0;\n    var now = Date.now();\n    \n    if (now - lastAlert > COOLDOWN_MS) {\n        // Update waktu terakhir alert\n        flow.set('lastAlert_' + nodeId, now);\n        \n        // Buat pesan Telegram\n        var waktu = new Date().toLocaleString('id-ID', {\n            timeZone: 'Asia/Jakarta',\n            day: '2-digit',\n            month: '2-digit',\n            year: 'numeric',\n            hour: '2-digit',\n            minute: '2-digit',\n            second: '2-digit'\n        });\n        \n        var pesan = '🚨 *EWS ALERT - BAHAYA LONGSOR* 🚨\\n\\n'\n            + '⚠️ Kemiringan tanah mencapai *' + tilt.toFixed(2) + '°*!\\n\\n'\n            + '📍 *Lokasi:* ' + nodeId.replace('_', ' ') + ' — Sampok, Sriharjo, Imogiri\\n'\n            + '🔺 *Kemiringan:* ' + tilt.toFixed(2) + '°\\n'\n            + '💧 *Kelembapan:* ' + data.soil + '%\\n'\n            + '🌧️ *Curah Hujan:* ' + data.tip + ' tip (' + (data.tip * 3.67).toFixed(1) + ' ml)\\n'\n            + '📶 *RSSI:* ' + data.rssi + ' dBm\\n'\n            + '⏰ *Waktu:* ' + waktu + '\\n\\n'\n            + '⚠️ Segera lakukan evakuasi jika diperlukan!';\n        \n        msg.payload = {\n            chatId: '',  // ⚠️ ISI DENGAN CHAT ID TELEGRAM ANDA\n            type: 'message',\n            content: pesan,\n            options: {\n                parse_mode: 'Markdown'\n            }\n        };\n        \n        node.status({fill: 'red', shape: 'dot', text: 'Alert ' + nodeId + ' @ ' + tilt.toFixed(1) + '°'});\n        return msg;\n    } else {\n        // Cooldown aktif\n        var sisaCooldown = Math.ceil((COOLDOWN_MS - (now - lastAlert)) / 1000);\n        node.status({fill: 'yellow', shape: 'ring', text: 'Cooldown ' + nodeId + ': ' + sisaCooldown + 's'});\n        return null;\n    }\n}\n\n// Normal - tidak kirim\nnode.status({fill: 'green', shape: 'dot', text: nodeId + ': ' + tilt.toFixed(1) + '° (Normal)'});\nreturn null;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 710,
+    "y": 560,
+    "wires": [
+      ["telegram_send_1"]
+    ]
+  },
+
+  {
+    "id": "telegram_send_1",
+    "type": "telegram sender",
+    "z": "ews_tab_1",
+    "name": "📱 Kirim Telegram",
+    "bot": "",
+    "haserroroutput": false,
+    "outputs": 1,
+    "x": 990,
+    "y": 560,
+    "wires": [
+      []
+    ]
+  },
+
+  {
+    "id": "comment_api",
+    "type": "comment",
+    "z": "ews_tab_1",
+    "name": "📊 API ENDPOINTS (untuk Chart historis)",
+    "info": "API untuk mengambil data historis dari database",
+    "x": 210,
+    "y": 660,
+    "wires": []
+  },
+
+  {
+    "id": "http_history_in",
+    "type": "http in",
+    "z": "ews_tab_1",
+    "name": "📊 GET /api/history",
+    "url": "/api/history",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 160,
+    "y": 720,
+    "wires": [
+      ["query_history_func"]
+    ]
+  },
+
+  {
+    "id": "query_history_func",
+    "type": "function",
+    "z": "ews_tab_1",
+    "name": "📊 Build Query History",
+    "func": "var hours = msg.req.query.hours || 24;\nvar nodeFilter = msg.req.query.node || '';\n\nvar sql = 'SELECT * FROM sensor_data WHERE timestamp >= datetime(\"now\", \"-' + hours + ' hours\")';\n\nif (nodeFilter) {\n    sql += \" AND node = '\" + nodeFilter + \"'\";\n}\n\nsql += ' ORDER BY timestamp ASC LIMIT 2000';\nmsg.topic = sql;\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 410,
+    "y": 720,
+    "wires": [
+      ["sqlite_query_history"]
+    ]
+  },
+
+  {
+    "id": "sqlite_query_history",
+    "type": "sqlite",
+    "z": "ews_tab_1",
+    "name": "💾 SQLite Query",
+    "mydb": "sqlite_db_1",
+    "sqlquery": "msg.topic",
+    "sql": "",
+    "x": 640,
+    "y": 720,
+    "wires": [
+      ["format_history_resp"]
+    ]
+  },
+
+  {
+    "id": "format_history_resp",
+    "type": "function",
+    "z": "ews_tab_1",
+    "name": "📊 Format Response",
+    "func": "var data = msg.payload || [];\n\nmsg.payload = {\n    success: true,\n    count: data.length,\n    data: data\n};\n\nmsg.headers = {\n    'Content-Type': 'application/json',\n    'Access-Control-Allow-Origin': '*'\n};\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 850,
+    "y": 720,
+    "wires": [
+      ["http_history_resp"]
+    ]
+  },
+
+  {
+    "id": "http_history_resp",
+    "type": "http response",
+    "z": "ews_tab_1",
+    "name": "📊 Response",
+    "statusCode": "200",
+    "headers": {},
+    "x": 1050,
+    "y": 720,
+    "wires": []
+  },
+
+  {
+    "id": "http_latest_in",
+    "type": "http in",
+    "z": "ews_tab_1",
+    "name": "📊 GET /api/latest",
+    "url": "/api/latest",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 160,
+    "y": 800,
+    "wires": [
+      ["query_latest_func"]
+    ]
+  },
+
+  {
+    "id": "query_latest_func",
+    "type": "function",
+    "z": "ews_tab_1",
+    "name": "📊 Build Query Latest",
+    "func": "msg.topic = \"SELECT * FROM sensor_data WHERE id IN (SELECT MAX(id) FROM sensor_data GROUP BY node) ORDER BY node ASC\";\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 410,
+    "y": 800,
+    "wires": [
+      ["sqlite_query_latest"]
+    ]
+  },
+
+  {
+    "id": "sqlite_query_latest",
+    "type": "sqlite",
+    "z": "ews_tab_1",
+    "name": "💾 SQLite Query",
+    "mydb": "sqlite_db_1",
+    "sqlquery": "msg.topic",
+    "sql": "",
+    "x": 640,
+    "y": 800,
+    "wires": [
+      ["format_latest_resp"]
+    ]
+  },
+
+  {
+    "id": "format_latest_resp",
+    "type": "function",
+    "z": "ews_tab_1",
+    "name": "📊 Format Response",
+    "func": "var data = msg.payload || [];\n\nmsg.payload = {\n    success: true,\n    count: data.length,\n    data: data\n};\n\nmsg.headers = {\n    'Content-Type': 'application/json',\n    'Access-Control-Allow-Origin': '*'\n};\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 850,
+    "y": 800,
+    "wires": [
+      ["http_latest_resp"]
+    ]
+  },
+
+  {
+    "id": "http_latest_resp",
+    "type": "http response",
+    "z": "ews_tab_1",
+    "name": "📊 Response",
+    "statusCode": "200",
+    "headers": {},
+    "x": 1050,
+    "y": 800,
+    "wires": []
+  }
+]
