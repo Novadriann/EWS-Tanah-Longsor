@@ -1,9 +1,11 @@
-# 🚨 EWS Margorejo — Sistem Peringatan Dini Tanah Longsor
+# ⚠️ EWS Lab Riset Elektronika dan Instrumentasi
+## Sistem Peringatan Dini Tanah Longsor
 
-Sistem Early Warning System (EWS) untuk mendeteksi potensi tanah longsor menggunakan sensor kemiringan (ADXL345), curah hujan (tipping bucket), dan kelembapan tanah. Data dikirim via LoRa ke gateway, diteruskan ke Node-RED, dan ditampilkan secara real-time di web dashboard interaktif.
+Sistem Early Warning System (EWS) untuk mendeteksi potensi tanah longsor menggunakan sensor kemiringan (ADXL345), curah hujan (tipping bucket), dan kelembapan tanah. Data dikirim via LoRa ke gateway, diteruskan ke Node-RED, dan ditampilkan secara real-time di web dashboard interaktif bertemakan cokelat/earth-tone.
 
 **📍 Lokasi:** Sampok, Sriharjo, Imogiri, Bantul, DIY  
-**🎓 Proyek:** PKM 2026
+**🎓 Proyek:** PKM 2026  
+**🏫 Lab Riset Elektronika dan Instrumentasi — Universitas Gadjah Mada**
 
 ---
 
@@ -11,15 +13,15 @@ Sistem Early Warning System (EWS) untuk mendeteksi potensi tanah longsor menggun
 
 ```
 [T-BEAM NODE 1] ──LoRa──┐
-                         ├──> [T-BEAM RECEIVER] ──WiFi──> [MQTT Mosquitto]
+                         ├──> [T-BEAM RECEIVER] ──WiFi──> [MQTT Mosquitto :1883]
 [T-BEAM NODE 2] ──LoRa──┘                                       │
                                                                  ▼
-                                                          [NODE-RED]
+                                                          [NODE-RED :1880]
                                                            │  │  │  │
-                                                           │  │  │  └──> 📱 Telegram Bot (Alert)
-                                                           │  │  └─────> 💾 SQLite (Database)
-                                                           │  └────────> 🌐 WebSocket (Real-time)
-                                                           └───────────> 📊 API REST (Historis)
+                                                           │  │  │  └──> 📱 Telegram Bot (Alert + Cooldown 5 menit)
+                                                           │  │  └─────> 💾 SQLite (Database historis)
+                                                           │  └────────> 🌐 WebSocket /ws/ews (Real-time)
+                                                           └───────────> 📊 REST API /api/history & /api/latest
                                                                               │
                                                                               ▼
                                                                     [WEB BROWSER / Dashboard]
@@ -31,24 +33,37 @@ Sistem Early Warning System (EWS) untuk mendeteksi potensi tanah longsor menggun
 
 ```
 WEB EWS/
+├── README.md                                    ← Dokumentasi ini
+│
 ├── arduino/
 │   ├── transmitter_node1/
-│   │   └── transmitter_node1.ino    ← Kode sensor NODE 1
+│   │   └── transmitter_node1.ino               ← Kode sensor NODE 1 (interval 5000ms)
 │   ├── transmitter_node2/
-│   │   └── transmitter_node2.ino    ← Kode sensor NODE 2
+│   │   └── transmitter_node2.ino               ← Kode sensor NODE 2 (interval 5300ms)
 │   └── receiver/
-│       └── receiver.ino              ← Kode gateway receiver
-├── web/
-│   ├── index.html                    ← Halaman login
-│   ├── dashboard.html                ← Dashboard utama (peta + data)
-│   ├── css/
-│   │   └── style.css                 ← Stylesheet dashboard
-│   └── js/
-│       └── app.js                    ← Logic WebSocket, Leaflet, Chart.js
-├── node-red/
-│   └── flows.json                    ← Flow Node-RED (import langsung)
-└── README.md                         ← Dokumentasi ini
+│       └── receiver.ino                        ← Kode gateway: LoRa → WiFi → MQTT
+│
+├── web/                                        ← Folder statis (httpStatic Node-RED)
+│   ├── index.html                              ← Halaman login (2 kolom, hero panel)
+│   ├── dashboard.html                          ← Dashboard utama (peta + sidebar + grafik)
+│   │
+│   ├── css/                                    ← Stylesheet dipisah per halaman/fungsi
+│   │   ├── login.css                           ← Gaya khusus halaman login
+│   │   ├── dashboard.css                       ← Layout dashboard, sidebar, node card, chart
+│   │   └── map.css                             ← Gaya Leaflet map, marker, popup
+│   │
+│   └── js/                                     ← JavaScript dipisah per modul/fungsi
+│       ├── login.js                            ← Auth, toggle password, redirect
+│       ├── dashboard.js                        ← State, clock, alert banner, audio, offline
+│       ├── map.js                              ← Leaflet map init, marker, popup builder
+│       ├── chart.js                            ← Chart.js historis, threshold line plugin
+│       └── websocket.js                        ← Koneksi WebSocket Node-RED, auto-reconnect
+│
+└── node-red/
+    └── flows.json                              ← Flow Node-RED (siap import)
 ```
+
+> ℹ️ **Catatan Revisi v2:** File web kini dipisahkan secara modular (1 file per fungsi/bahasa) untuk kemudahan pemeliharaan. File lama `style.css` dan `app.js` sudah dihapus dan digantikan oleh file-file di atas.
 
 ---
 
@@ -65,7 +80,7 @@ WEB EWS/
 ### Software
 - [Arduino IDE](https://www.arduino.cc/en/software) (atau PlatformIO)
 - [Node.js](https://nodejs.org/) (versi 18+)
-- [Node-RED](https://nodered.org/)
+- [Node-RED](https://nodered.org/) v3+
 - [Mosquitto MQTT Broker](https://mosquitto.org/download/)
 
 ### Library Arduino (Install via Library Manager)
@@ -78,95 +93,98 @@ WEB EWS/
 
 ## 🚀 Instalasi & Setup
 
-### 1. Install Mosquitto MQTT Broker
+### Langkah 1 — Install Mosquitto MQTT Broker
 
 **Windows:**
 1. Download dari https://mosquitto.org/download/
 2. Install (centang semua default)
-3. Buka Command Prompt sebagai Administrator:
-   ```cmd
+3. Buka **PowerShell sebagai Administrator**, jalankan:
+   ```powershell
    net start mosquitto
    ```
-4. Verifikasi:
-   ```cmd
-   mosquitto -v
+4. Verifikasi berjalan:
+   ```powershell
+   Get-Service mosquitto
+   # Status harus: Running
    ```
 
-### 2. Install Node-RED
+### Langkah 2 — Install Node-RED
 
-```bash
+```powershell
+# Install Node-RED secara global
 npm install -g node-red
 ```
 
-Jalankan Node-RED:
-```bash
-node-red
-```
+### Langkah 3 — Install Plugin Node-RED (SQLite & Telegram)
 
-Buka browser: **http://localhost:1880**
+```powershell
+# Masuk ke direktori konfigurasi Node-RED
+cd $env:USERPROFILE\.node-red
 
-### 3. Install Node-RED Palettes
-
-Buka Command Prompt, masuk ke direktori Node-RED:
-
-```bash
-cd %USERPROFILE%\.node-red
+# Install kedua plugin
 npm install node-red-node-sqlite
 npm install node-red-contrib-telegrambot
+
+# Setujui script instalasi sqlite3
+npm install-scripts approve sqlite3
 ```
 
-Restart Node-RED setelah install.
-
-### 4. Konfigurasi httpStatic (Penting!)
+### Langkah 4 — Konfigurasi httpStatic (Penting!)
 
 Edit file `settings.js` Node-RED:
-- Lokasi: `C:\Users\<username>\.node-red\settings.js`
+- Lokasi file: `C:\Users\<username>\.node-red\settings.js`
 
-Cari baris `httpStatic` (biasanya dikomentari), ubah menjadi:
+Cari baris yang mengandung `//httpStatic:`, hapus tanda `//` dan ubah nilainya:
 
 ```javascript
 httpStatic: 'D:/KULIAH/PKM - Margorejo/WEB EWS/web',
 ```
 
-> ⚠️ **Sesuaikan path dengan lokasi folder `web` kamu!**  
-> Gunakan forward slash (`/`) bukan backslash (`\`).
+> ⚠️ **Sesuaikan path dengan lokasi folder `web` di komputermu!**  
+> Gunakan forward slash (`/`) bukan backslash (`\`).  
+> Konfigurasi ini sudah dilakukan jika mengikuti setup sebelumnya — cukup verifikasi saja.
 
-Restart Node-RED setelah mengubah settings.
+### Langkah 5 — Salin & Import Flow Node-RED
 
-### 5. Import Flow Node-RED
+**Cara tercepat (salin file langsung):**
+```powershell
+Copy-Item "d:\KULIAH\PKM - Margorejo\WEB EWS\node-red\flows.json" "$env:USERPROFILE\.node-red\flows.json" -Force
+```
 
+**Atau via UI Node-RED (jika sudah ada flow lain):**
 1. Buka Node-RED: http://localhost:1880
-2. Klik menu ☰ (kanan atas) → **Import**
-3. Pilih tab **Clipboard**
-4. Buka file `node-red/flows.json`, copy semua isinya
-5. Paste ke dalam kotak import
-6. Klik **Import**
-7. Klik **Deploy** (tombol merah kanan atas)
+2. Klik menu ☰ (kanan atas) → **Import** → **Clipboard**
+3. Buka file `node-red/flows.json`, salin semua isinya, paste, klik **Import**
+4. Klik tombol **Deploy** (merah, kanan atas)
 
-### 6. Konfigurasi MQTT Broker di Node-RED
+### Langkah 6 — Konfigurasi Telegram Bot (Opsional)
 
-1. Double-click node **📡 ews/lora_data**
-2. Klik ikon pensil di sebelah "Server"
-3. Pastikan:
-   - Server: `localhost`
-   - Port: `1883`
-4. Klik **Update** → **Done** → **Deploy**
+> Lewati langkah ini jika belum membutuhkan notifikasi Telegram.
 
-### 7. Konfigurasi Telegram Bot
+1. Buka Telegram → cari **@BotFather** → ketik `/newbot` → ikuti instruksi
+2. Copy **Token bot** yang diberikan
+3. Cari **@userinfobot** untuk mendapatkan **Chat ID**-mu
+4. Di Node-RED, double-click node **📱 Kirim Telegram**:
+   - Klik ikon pensil → masukkan **Bot Name** & **Token** → Update
+5. Double-click node **🚨 Alert Logic** → cari baris `chatId: ''` → isi dengan Chat ID-mu
+6. Klik **Deploy**
+7. **Ganti URL Telegram di web:** Buka `web/index.html` dan `web/dashboard.html`, cari teks `https://t.me/YourBotUsername`, ganti dengan username bot-mu (contoh: `https://t.me/EWSLabBot`)
 
-1. Buka Telegram, cari **@BotFather**
-2. Ketik `/newbot` dan ikuti instruksi
-3. Copy **Token** yang diberikan
-4. Cari **@userinfobot** untuk mendapatkan **Chat ID** kamu
-5. Di Node-RED:
-   - Double-click node **📱 Kirim Telegram**
-   - Klik ikon pensil di "Bot"
-   - Masukkan **Bot Name** dan **Token**
-   - Klik **Update**
-6. Double-click node **🚨 Alert Logic**
-   - Di dalam kode, cari baris: `chatId: ''`
-   - Ganti dengan Chat ID kamu, misal: `chatId: '123456789'`
-7. Klik **Done** → **Deploy**
+### Langkah 7 — Jalankan Server
+
+```powershell
+# Jalankan Node-RED (terminal baru, biarkan tetap terbuka)
+node-red
+```
+
+Tunggu hingga muncul pesan:
+```
+[info] Server now running at http://127.0.0.1:1880/
+[info] Started flows
+[info] [mqtt-broker:Mosquitto Lokal] Connected to broker: mqtt://localhost:1883
+```
+
+> ℹ️ Mosquitto sudah berjalan otomatis sebagai Windows Service — tidak perlu dijalankan manual setiap kali.
 
 ---
 
@@ -174,70 +192,76 @@ Restart Node-RED setelah mengubah settings.
 
 ### Transmitter NODE 1
 1. Buka `arduino/transmitter_node1/transmitter_node1.ino` di Arduino IDE
-2. Pilih Board: **ESP32 Dev Module** (atau TTGO T-BEAM)
-3. Upload ke T-BEAM pertama
+2. Pilih Board: **ESP32 Dev Module** (atau TTGO LoRa T-Beam)
+3. Pilih Port yang sesuai
+4. Upload ke T-BEAM pertama (NODE 1)
 
 ### Transmitter NODE 2
 1. Buka `arduino/transmitter_node2/transmitter_node2.ino`
-2. Upload ke T-BEAM kedua
+2. Upload ke T-BEAM kedua (NODE 2)
 
 ### Receiver Gateway
 1. Buka `arduino/receiver/receiver.ino`
-2. **WAJIB EDIT** baris berikut sebelum upload:
+2. **WAJIB EDIT** 3 baris berikut sebelum upload:
    ```cpp
    const char* ssid        = "NAMA_WIFI_KAMU";
-   const char* password    = "PASSWORD_WIFI";
-   const char* mqtt_server = "IP_LAPTOP_KAMU";  // Dari CMD: ipconfig
+   const char* password    = "PASSWORD_WIFI_KAMU";
+   const char* mqtt_server = "IP_LAPTOP_KAMU";  // Cari via: ipconfig
    ```
-3. Upload ke T-BEAM ketiga
+3. Upload ke T-BEAM ketiga (Receiver)
 
-> 💡 **Cara mendapatkan IP laptop:**
-> Buka CMD → ketik `ipconfig` → cari **IPv4 Address** (misal: `192.168.1.100`)
-> Pastikan receiver dan laptop dalam **satu jaringan WiFi yang sama**.
+**Cara mendapatkan IP laptop:**
+```powershell
+ipconfig
+# Cari: IPv4 Address . . . . . . : 10.x.x.x atau 192.168.x.x
+```
+> Pastikan receiver dan laptop terhubung ke **jaringan WiFi yang sama**.
 
 ---
 
-## 🖥️ Akses Dashboard
+## 🌐 Akses Dashboard
 
-1. Pastikan Node-RED sudah berjalan (`node-red`)
-2. Pastikan Mosquitto sudah berjalan
-3. Buka browser: **http://localhost:1880/index.html**
-4. Login:
-   - **Username:** `admin`
-   - **Password:** `ews2026`
-5. Dashboard akan menampilkan peta dengan 2 marker sensor
+| Perangkat | URL | Keterangan |
+|-----------|-----|------------|
+| Laptop (lokal) | `http://localhost:1880/index.html` | Langsung |
+| HP / laptop lain | `http://<IP_LAPTOP>:1880/index.html` | Harus 1 jaringan WiFi |
+| Node-RED Editor | `http://localhost:1880` | Kelola flow |
 
-> Untuk akses dari HP/perangkat lain dalam jaringan yang sama:
-> Gunakan `http://<IP_LAPTOP>:1880/index.html`
+**Kredensial Login:**
+| Field | Nilai |
+|-------|-------|
+| Username | `admin` |
+| Password | `ews2026` |
 
 ---
 
 ## 🧪 Testing Tanpa Hardware
 
-Kamu bisa mengirim data simulasi menggunakan `mosquitto_pub`:
+Kirim data simulasi dari PowerShell/CMD untuk menguji dashboard:
 
-```bash
-# Simulasi NODE_1 - Kondisi Normal
-mosquitto_pub -h localhost -t "ews/lora_data" -m "NODE_1,SOIL:65,HALL:1,MAG:0,TIP:12,TILT:15.20,RAIN:44.04,RSSI:-65,SNR:8.5"
+```powershell
+# ---- Kondisi Normal ----
+# NODE 1 Normal
+& "C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t "ews/lora_data" -m "NODE_1,SOIL:65,HALL:1,MAG:0,TIP:12,TILT:20.50,RAIN:44.04,RSSI:-65,SNR:8.5"
 
-# Simulasi NODE_1 - BAHAYA (kemiringan > 45°)
-mosquitto_pub -h localhost -t "ews/lora_data" -m "NODE_1,SOIL:80,HALL:0,MAG:1,TIP:45,TILT:52.30,RAIN:165.15,RSSI:-70,SNR:7.0"
+# NODE 2 Normal
+& "C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t "ews/lora_data" -m "NODE_2,SOIL:45,HALL:1,MAG:0,TIP:8,TILT:14.20,RAIN:29.36,RSSI:-60,SNR:9.0"
 
-# Simulasi NODE_2 - Kondisi Normal
-mosquitto_pub -h localhost -t "ews/lora_data" -m "NODE_2,SOIL:45,HALL:1,MAG:0,TIP:8,TILT:12.50,RAIN:29.36,RSSI:-60,SNR:9.0"
+# ---- Kondisi BAHAYA (tilt >= 45°) ----
+# NODE 1 Bahaya — marker merah berkedip, banner alert, suara berbunyi
+& "C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t "ews/lora_data" -m "NODE_1,SOIL:85,HALL:0,MAG:1,TIP:50,TILT:53.20,RAIN:183.50,RSSI:-72,SNR:6.5"
 
-# Simulasi NODE_2 - BAHAYA
-mosquitto_pub -h localhost -t "ews/lora_data" -m "NODE_2,SOIL:90,HALL:0,MAG:1,TIP:60,TILT:48.75,RAIN:220.20,RSSI:-75,SNR:6.0"
+# NODE 2 Bahaya
+& "C:\Program Files\mosquitto\mosquitto_pub.exe" -h localhost -t "ews/lora_data" -m "NODE_2,SOIL:90,HALL:0,MAG:1,TIP:60,TILT:48.75,RAIN:220.20,RSSI:-75,SNR:6.0"
 ```
 
-> 💡 Jika `mosquitto_pub` tidak ditemukan, tambahkan path Mosquitto ke PATH:
-> `C:\Program Files\mosquitto\`
+> 💡 Jika `mosquitto_pub` tidak ditemukan di PATH, gunakan path lengkap seperti contoh di atas, atau tambahkan `C:\Program Files\mosquitto\` ke Environment Variables PATH.
 
 ---
 
 ## 📋 Format Data Sensor
 
-Data dikirim dalam format string, dipisahkan koma:
+Data dikirim dalam format string CSV, dipisahkan koma:
 
 ```
 NODE_1,SOIL:65,HALL:1,MAG:0,TIP:12,TILT:26.91,RAIN:44.04,RSSI:-65,SNR:8.5
@@ -245,44 +269,60 @@ NODE_1,SOIL:65,HALL:1,MAG:0,TIP:12,TILT:26.91,RAIN:44.04,RSSI:-65,SNR:8.5
 
 | Field | Keterangan | Satuan |
 |-------|------------|--------|
-| `NODE_x` | Identitas sensor (NODE_1 / NODE_2) | - |
-| `SOIL` | Kelembapan tanah | % (0-100) |
-| `HALL` | Status hall sensor | 0/1 |
+| `NODE_x` | Identitas sensor (`NODE_1` atau `NODE_2`) | — |
+| `SOIL` | Kelembapan tanah | % (0–100) |
+| `HALL` | Status Hall effect sensor | 0/1 |
 | `MAG` | Magnet terdeteksi | 0/1 |
 | `TIP` | Total jumlah tip tipping bucket | count |
 | `TILT` | Kemiringan tanah | derajat (°) |
-| `RAIN` | Volume curah hujan (TIP × 3.67) | ml |
-| `RSSI` | Kekuatan sinyal LoRa | dBm |
-| `SNR` | Signal-to-Noise Ratio | dB |
+| `RAIN` | Volume curah hujan (`TIP × 3,67 ml`) | ml |
+| `RSSI` | Kekuatan sinyal LoRa (ditambah Receiver) | dBm |
+| `SNR` | Signal-to-Noise Ratio (ditambah Receiver) | dB |
 
 ---
 
 ## 🚨 Sistem Alert
 
-| Kondisi | Threshold | Aksi |
-|---------|-----------|------|
+| Kondisi | Threshold | Aksi Otomatis |
+|---------|-----------|---------------|
 | **Normal** | Kemiringan < 45° | Marker hijau, status normal |
-| **BAHAYA** | Kemiringan ≥ 45° | Marker merah berkedip, banner alert, suara, kirim Telegram |
+| **BAHAYA** | Kemiringan ≥ 45° | Marker merah berkedip (pulse), banner merah muncul, suara 3-nada, kirim Telegram |
+| **Offline** | Tidak ada data > 30 detik | Marker abu-abu, status offline |
 
-**Cooldown Telegram:** 5 menit per node (mencegah spam)
+**Cooldown Telegram:** 5 menit per node — mencegah spam alert
 
 ---
 
 ## 🔧 Troubleshooting
 
-| Masalah | Solusi |
-|---------|--------|
-| WiFi tidak konek | Periksa SSID & password di `receiver.ino` |
-| MQTT error | Pastikan Mosquitto sudah berjalan: `net start mosquitto` |
-| LoRa tidak terima data | Periksa frekuensi (922MHz) dan jarak antar perangkat |
-| WebSocket terputus | Periksa Node-RED masih berjalan, refresh browser |
-| Telegram error "fetch failed" | Cooldown sudah diterapkan, periksa koneksi internet |
-| Data tidak masuk ke web | Cek tab Debug di Node-RED untuk melihat apakah data masuk |
-| Dashboard tidak bisa diakses | Pastikan `httpStatic` di settings.js sudah benar |
-| SQLite error | Install ulang: `cd ~/.node-red && npm install node-red-node-sqlite` |
+| Masalah | Penyebab | Solusi |
+|---------|----------|--------|
+| WiFi tidak konek (Receiver) | SSID/password salah | Periksa & upload ulang `receiver.ino` |
+| MQTT error di Node-RED | Mosquitto tidak berjalan | `net start mosquitto` (sebagai Admin) |
+| LoRa tidak terima data | Jarak/frekuensi | Periksa frekuensi 922 MHz, dekatkan perangkat |
+| WebSocket terputus terus | Node-RED tidak jalan | Jalankan `node-red` di terminal |
+| Dashboard tidak bisa diakses | `httpStatic` belum diset | Periksa `settings.js`, pastikan path benar |
+| Halaman putih / error 404 | File web tidak ditemukan | Pastikan folder `web/` sesuai path di `httpStatic` |
+| SQLite error saat startup | Plugin belum di-approve | Jalankan `npm install-scripts approve sqlite3` |
+| Data tidak tampil di web | Flow belum di-deploy | Buka Node-RED → klik Deploy |
+| Telegram "fetch failed" | Token/Chat ID kosong | Isi token & chat ID di node Telegram |
+| Suara alert tidak bunyi | Browser memblokir audio | Klik area manapun di halaman terlebih dahulu |
+
+---
+
+## 🗂️ Penjelasan Modul JavaScript
+
+| File | Fungsi |
+|------|--------|
+| `js/login.js` | Cek sesi, validasi form login, redirect ke dashboard |
+| `js/dashboard.js` | Manajemen state sensor, update sidebar, alert banner, suara, deteksi offline |
+| `js/map.js` | Inisialisasi Leaflet, buat/update marker & popup per node |
+| `js/chart.js` | Inisialisasi Chart.js, fetch `/api/history`, tampilkan grafik kemiringan & kelembapan |
+| `js/websocket.js` | Koneksi WebSocket ke Node-RED, auto-reconnect 3 detik, panggil `updateDashboard()` |
 
 ---
 
 ## 📄 Lisensi
 
-MIT License — PKM Margorejo 2026
+MIT License — PKM Margorejo 2026  
+Lab Riset Elektronika dan Instrumentasi — Universitas Gadjah Mada
