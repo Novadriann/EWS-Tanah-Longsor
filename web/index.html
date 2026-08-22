@@ -1,188 +1,144 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EWS Margorejo — Login</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚨</text></svg>">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: 'Inter', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 50%, #0D3B0F 100%);
-      padding: 20px;
-    }
-    .login-card {
-      background: #ffffff;
-      border-radius: 16px;
-      padding: 40px;
-      width: 100%;
-      max-width: 420px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      animation: fadeIn 0.6s ease-out;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .login-logo {
-      font-size: 48px;
-      text-align: center;
-      margin-bottom: 8px;
-    }
-    .login-title {
-      color: #1B5E20;
-      font-size: 24px;
-      font-weight: 700;
-      text-align: center;
-      margin-bottom: 4px;
-    }
-    .login-subtitle {
-      color: #757575;
-      font-size: 13px;
-      text-align: center;
-      margin-bottom: 32px;
-      line-height: 1.4;
-    }
-    .form-group {
-      margin-bottom: 20px;
-    }
-    .form-group label {
-      display: block;
-      font-size: 14px;
-      font-weight: 500;
-      color: #333;
-      margin-bottom: 6px;
-    }
-    .form-group input {
-      width: 100%;
-      padding: 12px 16px;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 15px;
-      font-family: 'Inter', sans-serif;
-      transition: border-color 0.2s;
-      outline: none;
-    }
-    .form-group input:focus {
-      border-color: #2E7D32;
-    }
-    .btn-login {
-      width: 100%;
-      padding: 14px;
-      background: #1B5E20;
-      color: #ffffff;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      font-family: 'Inter', sans-serif;
-      cursor: pointer;
-      transition: background 0.2s;
-      margin-top: 8px;
-    }
-    .btn-login:hover {
-      background: #2E7D32;
-    }
-    .btn-login:active {
-      background: #0D3B0F;
-    }
-    .error-msg {
-      display: none;
-      color: #D32F2F;
-      font-size: 13px;
-      text-align: center;
-      margin-top: 16px;
-      padding: 10px;
-      background: #FFEBEE;
-      border-radius: 6px;
-    }
-    .error-msg.show {
-      display: block;
-      animation: shake 0.4s ease;
-    }
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-8px); }
-      75% { transform: translateX(8px); }
-    }
-    .footer-text {
-      text-align: center;
-      margin-top: 24px;
-      font-size: 11px;
-      color: #9e9e9e;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EWS Lab Riset — Login</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚠️</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/login.css" />
 </head>
 <body>
-  <div class="login-card">
-    <div class="login-logo">🚨</div>
-    <h1 class="login-title">EWS Margorejo</h1>
-    <p class="login-subtitle">
-      Sistem Peringatan Dini Tanah Longsor<br>
-      Sampok, Sriharjo, Imogiri, Bantul, DIY
-    </p>
-    
-    <form id="loginForm" onsubmit="return handleLogin(event)">
-      <div class="form-group">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" placeholder="Masukkan username" required autofocus>
+
+  <!-- ==============================
+       RUNNING TEXT / MARQUEE BAR
+       ============================== -->
+  <div class="marquee-bar">
+    <div class="marquee-label">⚠️ INFORMASI</div>
+    <div class="marquee-track-wrapper">
+      <div class="marquee-track">
+        <span class="marquee-text">
+          🚨 PERINGATAN DINI BENCANA LONGSOR — Selalu pantau pergerakan tanah di sekitar Anda. Segera laporkan jika terjadi pergeseran tanah yang mencurigakan. &nbsp;|&nbsp;
+          ⛰️ Waspada Potensi Tanah Longsor — Musim hujan meningkatkan risiko gerakan tanah. Evakuasi mandiri jika tanah mulai bergerak. &nbsp;|&nbsp;
+          📡 Sistem EWS aktif memantau 2 titik sensor di Sampok, Sriharjo, Imogiri, Bantul secara real-time. &nbsp;|&nbsp;
+          🏫 Lab Riset Elektronika dan Instrumentasi — Universitas Gadjah Mada &nbsp;|&nbsp;
+          🚨 PERINGATAN DINI BENCANA LONGSOR — Selalu pantau pergerakan tanah di sekitar Anda. Segera laporkan jika terjadi pergeseran tanah yang mencurigakan. &nbsp;|&nbsp;
+          ⛰️ Waspada Potensi Tanah Longsor — Musim hujan meningkatkan risiko gerakan tanah. Evakuasi mandiri jika tanah mulai bergerak. &nbsp;|&nbsp;
+          📡 Sistem EWS aktif memantau 2 titik sensor di Sampok, Sriharjo, Imogiri, Bantul secara real-time. &nbsp;|&nbsp;
+          🏫 Lab Riset Elektronika dan Instrumentasi — Universitas Gadjah Mada &nbsp;|&nbsp;
+        </span>
       </div>
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" placeholder="Masukkan password" required>
-      </div>
-      <button type="submit" class="btn-login">Masuk</button>
-    </form>
-    
-    <div class="error-msg" id="errorMsg">
-      ❌ Username atau password salah!
-    </div>
-    
-    <div class="footer-text">
-      © 2026 PKM Margorejo — Universitas
     </div>
   </div>
 
-  <script>
-    // Cek jika sudah login, langsung ke dashboard
-    if (localStorage.getItem('ews_auth')) {
-      window.location.href = 'dashboard.html';
-    }
+  <!-- ==============================
+       MAIN LOGIN WRAPPER
+       ============================== -->
+  <main class="login-wrapper">
 
-    function handleLogin(e) {
-      e.preventDefault();
-      
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value;
-      
-      // Kredensial default (bisa diubah)
-      const VALID_USER = 'admin';
-      const VALID_PASS = 'ews2026';
-      
-      if (username === VALID_USER && password === VALID_PASS) {
-        // Simpan token autentikasi
-        localStorage.setItem('ews_auth', btoa(username + ':' + Date.now()));
-        window.location.href = 'dashboard.html';
-      } else {
-        const errorMsg = document.getElementById('errorMsg');
-        errorMsg.classList.remove('show');
-        // Trigger reflow agar animasi bisa diulang
-        void errorMsg.offsetWidth;
-        errorMsg.classList.add('show');
-      }
-      
-      return false;
-    }
-  </script>
+    <!-- Left decorative panel -->
+    <div class="login-hero">
+      <div class="hero-content">
+        <div class="hero-icon">⚠️</div>
+        <h2>Sistem Peringatan<br/>Dini Tanah Longsor</h2>
+        <p>Memantau kondisi tanah secara real-time dengan teknologi sensor nirkabel LoRa untuk keselamatan masyarakat.</p>
+        <div class="hero-stats">
+          <div class="stat-item">
+            <div class="stat-number">2</div>
+            <div class="stat-label">Node Sensor</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">24/7</div>
+            <div class="stat-label">Monitoring</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">45°</div>
+            <div class="stat-label">Alert Threshold</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Login Card -->
+    <div class="login-panel">
+      <div class="login-card">
+
+        <!-- Logo & Title -->
+        <div class="login-logo-row">
+          <div class="login-logo-icon">⚠️</div>
+          <div class="login-logo-text">
+            <span class="login-brand-ews">EWS</span>
+            <span class="login-brand-lab">Lab Riset</span>
+          </div>
+        </div>
+
+        <h1 class="login-title">
+          Lab Riset Elektronika<br/>dan Instrumentasi
+        </h1>
+        <p class="login-subtitle">Masuk ke panel pemantauan sistem</p>
+
+        <!-- Form Login -->
+        <form id="loginForm" class="login-form" novalidate>
+          <div class="form-group">
+            <label for="username">Username</label>
+            <div class="input-wrapper">
+              <span class="input-icon">👤</span>
+              <input type="text" id="username" name="username"
+                     placeholder="Masukkan username" autocomplete="username" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🔒</span>
+              <input type="password" id="password" name="password"
+                     placeholder="Masukkan password" autocomplete="current-password" required />
+              <button type="button" class="toggle-password" id="togglePassword" aria-label="Tampilkan password">👁️</button>
+            </div>
+          </div>
+
+          <!-- Error message -->
+          <div class="error-alert" id="errorAlert">
+            ❌ Username atau password salah. Silakan coba lagi.
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="btn-login" id="btnLogin">
+            <span class="btn-text">Masuk ke Dashboard</span>
+            <span class="btn-icon">→</span>
+          </button>
+        </form>
+
+        <!-- Telegram Button -->
+        <div class="divider"><span>atau</span></div>
+        <a href="https://t.me/YourBotUsername"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="btn-telegram">
+          <svg class="telegram-svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+          </svg>
+          Buka Telegram Bot EWS
+        </a>
+
+      </div><!-- /.login-card -->
+
+      <!-- Footer bawah login -->
+      <footer class="login-footer">
+        <div class="footer-title">Landslide Early Warning System</div>
+        <div class="footer-subtitle">
+          Lab Riset Elektronika dan Instrumentasi — Universitas Gadjah Mada
+        </div>
+        <div class="footer-copy">© 2026 PKM Margorejo. Hak cipta dilindungi.</div>
+      </footer>
+
+    </div><!-- /.login-panel -->
+
+  </main><!-- /.login-wrapper -->
+
+  <script src="js/login.js"></script>
 </body>
 </html>

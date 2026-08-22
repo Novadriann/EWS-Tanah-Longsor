@@ -1,168 +1,234 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EWS Margorejo — Dashboard</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚨</text></svg>">
-  
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EWS Lab Riset — Dashboard Pemantauan</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚠️</text></svg>" />
+
   <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
   <!-- Dashboard CSS -->
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/map.css" />
 </head>
 <body>
-  <!-- ============================== -->
-  <!-- ALERT BANNER (hidden default)  -->
-  <!-- ============================== -->
-  <div id="alert-banner">
-    <div class="alert-content">
-      <span class="alert-icon">🚨</span>
-      <span class="alert-text">
-        <strong>PERINGATAN BAHAYA LONGSOR!</strong>
-        <span id="alert-detail">Kemiringan tanah melebihi 45°</span>
-      </span>
-      <button class="alert-close" onclick="dismissAlert()">✕</button>
+
+  <!-- ============================================================
+       ALERT BANNER — Muncul saat kemiringan >= 45°
+       ============================================================ -->
+  <div id="alertBanner" class="alert-banner" role="alert" aria-live="assertive">
+    <div class="alert-banner-content">
+      <span class="alert-banner-icon">🚨</span>
+      <div class="alert-banner-text">
+        <strong>PERINGATAN BAHAYA TANAH LONGSOR!</strong>
+        <span id="alertDetail">Kemiringan melebihi batas aman 45°</span>
+      </div>
+      <button class="alert-banner-close" onclick="dismissAlertBanner()" aria-label="Tutup">✕</button>
     </div>
   </div>
 
-  <!-- ============================== -->
-  <!-- HEADER                         -->
-  <!-- ============================== -->
-  <header>
-    <div class="header-left">
-      <span class="header-logo">🚨</span>
-      <div class="header-titles">
-        <h1>EWS Margorejo</h1>
-        <span class="header-subtitle">Sampok, Sriharjo, Imogiri, Bantul</span>
+  <!-- ============================================================
+       MARQUEE BAR — Running text informasi
+       ============================================================ -->
+  <div class="marquee-bar">
+    <div class="marquee-label">⚠️ INFO</div>
+    <div class="marquee-track-wrapper">
+      <div class="marquee-track">
+        <span class="marquee-text">
+          🚨 SISTEM EWS AKTIF — Pemantauan tanah longsor 24/7 di Sampok, Sriharjo, Imogiri, Bantul, DIY &nbsp;|&nbsp;
+          ⛰️ Waspadai Potensi Longsor — Segera evakuasi jika tanah bergerak atau muncul retakan &nbsp;|&nbsp;
+          📡 Sinyal LoRa terhubung aktif antar node sensor &nbsp;|&nbsp;
+          🌧️ Hujan lebat meningkatkan risiko pergerakan tanah — Pantau terus sistem ini &nbsp;|&nbsp;
+          📞 Darurat Bencana: BPBD Bantul (0274) 367626 &nbsp;|&nbsp;
+          🏫 Lab Riset Elektronika dan Instrumentasi — Universitas Gadjah Mada &nbsp;|&nbsp;
+          🚨 SISTEM EWS AKTIF — Pemantauan tanah longsor 24/7 di Sampok, Sriharjo, Imogiri, Bantul, DIY &nbsp;|&nbsp;
+          ⛰️ Waspadai Potensi Longsor — Segera evakuasi jika tanah bergerak atau muncul retakan &nbsp;|&nbsp;
+          📡 Sinyal LoRa terhubung aktif antar node sensor &nbsp;|&nbsp;
+          🌧️ Hujan lebat meningkatkan risiko pergerakan tanah — Pantau terus sistem ini &nbsp;|&nbsp;
+          📞 Darurat Bencana: BPBD Bantul (0274) 367626 &nbsp;|&nbsp;
+          🏫 Lab Riset Elektronika dan Instrumentasi — Universitas Gadjah Mada &nbsp;|&nbsp;
+        </span>
       </div>
     </div>
-    <div class="header-right">
-      <span id="connection-status" class="status-disconnected">
-        <span class="status-dot"></span>
-        Menghubungkan...
-      </span>
-      <span id="clock">--:--:--</span>
-      <button id="btn-mute" onclick="toggleMute()" title="Suara Alert">🔔</button>
-      <button id="btn-logout" onclick="logout()">Keluar</button>
+  </div>
+
+  <!-- ============================================================
+       HEADER
+       ============================================================ -->
+  <header class="site-header">
+    <div class="header-brand">
+      <span class="header-logo">⚠️</span>
+      <div class="header-brand-text">
+        <div class="header-title">EWS Lab Riset Elektronika dan Instrumentasi</div>
+        <div class="header-subtitle">Sistem Peringatan Dini Tanah Longsor — Sampok, Sriharjo, Imogiri</div>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <div id="wsStatus" class="ws-status ws-disconnected">
+        <span class="ws-dot"></span>
+        <span class="ws-label">Menghubungkan...</span>
+      </div>
+      <div class="header-clock" id="clock">--:--:--</div>
+      <button id="btnMute" class="btn-icon-ctrl" onclick="toggleMute()" title="Mute/Unmute alert">🔔</button>
+      <a href="https://t.me/YourBotUsername" target="_blank" rel="noopener noreferrer"
+         class="btn-telegram-header" title="Buka Telegram Bot">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+          <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+        </svg>
+        Telegram
+      </a>
+      <button class="btn-logout" onclick="logout()">Keluar</button>
     </div>
   </header>
 
-  <!-- ============================== -->
-  <!-- MAIN CONTENT                   -->
-  <!-- ============================== -->
-  <main>
-    <!-- SIDEBAR -->
-    <aside id="sidebar">
-      <!-- NODE 1 Card -->
-      <div class="node-card normal" id="card-node1">
-        <div class="node-header">
-          <span class="node-indicator" id="indicator-node1">●</span>
-          <h3>Node 1 — Sampok Utara</h3>
+  <!-- ============================================================
+       MAIN AREA = SIDEBAR + MAP
+       ============================================================ -->
+  <div class="app-body">
+
+    <!-- ----- SIDEBAR ----- -->
+    <aside class="sidebar">
+
+      <!-- Node 1 Card -->
+      <div class="node-card" id="cardNode1" data-state="normal">
+        <div class="node-card-header">
+          <div class="node-badge" id="nodeBadge1">
+            <span class="node-badge-dot"></span>
+            <span class="node-badge-label">NODE 1</span>
+          </div>
+          <div class="node-status-chip normal" id="chipNode1">✅ Normal</div>
         </div>
-        <div class="node-status-badge normal" id="badge-node1">✅ Normal</div>
-        
+        <div class="node-card-name">Sampok Utara</div>
+
         <div class="sensor-grid">
           <div class="sensor-item">
-            <div class="sensor-icon">🔺</div>
-            <div class="sensor-label">Kemiringan</div>
-            <div class="sensor-value" id="tilt-node1">--°</div>
+            <div class="sensor-icon-box">🔺</div>
+            <div class="sensor-info">
+              <div class="sensor-lbl">Kemiringan</div>
+              <div class="sensor-val" id="tiltNode1">--°</div>
+            </div>
           </div>
           <div class="sensor-item">
-            <div class="sensor-icon">💧</div>
-            <div class="sensor-label">Kelembapan</div>
-            <div class="sensor-value" id="soil-node1">--%</div>
+            <div class="sensor-icon-box">💧</div>
+            <div class="sensor-info">
+              <div class="sensor-lbl">Kelembapan</div>
+              <div class="sensor-val" id="soilNode1">--%</div>
+            </div>
           </div>
           <div class="sensor-item">
-            <div class="sensor-icon">🌧️</div>
-            <div class="sensor-label">Curah Hujan</div>
-            <div class="sensor-value" id="rain-node1">-- tip</div>
+            <div class="sensor-icon-box">🌧️</div>
+            <div class="sensor-info">
+              <div class="sensor-lbl">Curah Hujan</div>
+              <div class="sensor-val" id="rainNode1">-- tip</div>
+            </div>
           </div>
           <div class="sensor-item">
-            <div class="sensor-icon">📶</div>
-            <div class="sensor-label">Sinyal LoRa</div>
-            <div class="sensor-value" id="rssi-node1">-- dBm</div>
+            <div class="sensor-icon-box">📶</div>
+            <div class="sensor-info">
+              <div class="sensor-lbl">RSSI</div>
+              <div class="sensor-val" id="rssiNode1">-- dBm</div>
+            </div>
           </div>
         </div>
-        
-        <div class="last-update">
-          Terakhir: <span id="time-node1">Menunggu data...</span>
-        </div>
-      </div>
 
-      <!-- NODE 2 Card -->
-      <div class="node-card normal" id="card-node2">
-        <div class="node-header">
-          <span class="node-indicator" id="indicator-node2">●</span>
-          <h3>Node 2 — Sampok Selatan</h3>
+        <div class="node-card-footer">
+          Update: <span id="timeNode1">Menunggu data...</span>
         </div>
-        <div class="node-status-badge normal" id="badge-node2">✅ Normal</div>
-        
+      </div><!-- /node-card #1 -->
+
+      <!-- Node 2 Card -->
+      <div class="node-card" id="cardNode2" data-state="normal">
+        <div class="node-card-header">
+          <div class="node-badge" id="nodeBadge2">
+            <span class="node-badge-dot"></span>
+            <span class="node-badge-label">NODE 2</span>
+          </div>
+          <div class="node-status-chip normal" id="chipNode2">✅ Normal</div>
+        </div>
+        <div class="node-card-name">Sampok Selatan</div>
+
         <div class="sensor-grid">
           <div class="sensor-item">
-            <div class="sensor-icon">🔺</div>
-            <div class="sensor-label">Kemiringan</div>
-            <div class="sensor-value" id="tilt-node2">--°</div>
+            <div class="sensor-icon-box">🔺</div>
+            <div class="sensor-info">
+              <div class="sensor-lbl">Kemiringan</div>
+              <div class="sensor-val" id="tiltNode2">--°</div>
+            </div>
           </div>
           <div class="sensor-item">
-            <div class="sensor-icon">💧</div>
-            <div class="sensor-label">Kelembapan</div>
-            <div class="sensor-value" id="soil-node2">--%</div>
+            <div class="sensor-icon-box">💧</div>
+            <div class="sensor-info">
+              <div class="sensor-lbl">Kelembapan</div>
+              <div class="sensor-val" id="soilNode2">--%</div>
+            </div>
           </div>
           <div class="sensor-item">
-            <div class="sensor-icon">🌧️</div>
-            <div class="sensor-label">Curah Hujan</div>
-            <div class="sensor-value" id="rain-node2">-- tip</div>
+            <div class="sensor-icon-box">🌧️</div>
+            <div class="sensor-info">
+              <div class="sensor-lbl">Curah Hujan</div>
+              <div class="sensor-val" id="rainNode2">-- tip</div>
+            </div>
           </div>
           <div class="sensor-item">
-            <div class="sensor-icon">📶</div>
-            <div class="sensor-label">Sinyal LoRa</div>
-            <div class="sensor-value" id="rssi-node2">-- dBm</div>
+            <div class="sensor-icon-box">📶</div>
+            <div class="sensor-info">
+              <div class="sensor-lbl">RSSI</div>
+              <div class="sensor-val" id="rssiNode2">-- dBm</div>
+            </div>
           </div>
         </div>
-        
-        <div class="last-update">
-          Terakhir: <span id="time-node2">Menunggu data...</span>
-        </div>
-      </div>
 
-      <!-- LEGEND -->
+        <div class="node-card-footer">
+          Update: <span id="timeNode2">Menunggu data...</span>
+        </div>
+      </div><!-- /node-card #2 -->
+
+      <!-- Legend -->
       <div class="legend-card">
-        <h4>📋 Keterangan</h4>
+        <div class="legend-title">📋 Keterangan Status</div>
         <div class="legend-item">
-          <span class="legend-dot green"></span> Normal (&lt; 45°)
+          <span class="legend-dot normal"></span> Normal (Tilt &lt; 45°)
         </div>
         <div class="legend-item">
-          <span class="legend-dot red"></span> Bahaya (≥ 45°)
+          <span class="legend-dot danger"></span> Bahaya (Tilt ≥ 45°)
         </div>
         <div class="legend-item">
-          <span class="legend-dot gray"></span> Offline (tidak ada data)
+          <span class="legend-dot offline"></span> Offline (&gt; 30 dtk)
         </div>
-        <hr>
-        <div class="legend-info">
-          <small>📍 Lokasi: Sampok, Sriharjo, Imogiri</small><br>
-          <small>📡 2 Node Sensor Aktif</small><br>
-          <small>🌧️ 1 tip = 3.67 ml</small>
+        <hr class="legend-divider" />
+        <div class="legend-meta">
+          <div>📍 Sampok, Sriharjo, Imogiri, Bantul</div>
+          <div>🌧️ 1 tip = 3,67 ml</div>
+          <div>📡 LoRa 922 MHz</div>
         </div>
       </div>
-    </aside>
 
-    <!-- MAP CONTAINER -->
-    <div id="map-container">
+    </aside><!-- /sidebar -->
+
+    <!-- ----- MAP ----- -->
+    <div class="map-container">
       <div id="map"></div>
     </div>
-  </main>
 
-  <!-- ============================== -->
-  <!-- CHART SECTION                  -->
-  <!-- ============================== -->
-  <section id="chart-section">
-    <h2>📊 Data Historis (24 Jam Terakhir)</h2>
+  </div><!-- /app-body -->
+
+  <!-- ============================================================
+       CHART SECTION
+       ============================================================ -->
+  <section class="chart-section">
+    <div class="chart-section-header">
+      <h2>📊 Data Historis <span class="chart-range-label">24 Jam Terakhir</span></h2>
+      <button class="btn-refresh-chart" onclick="fetchHistory()" title="Refresh grafik">🔄 Refresh</button>
+    </div>
     <div class="chart-grid">
       <div class="chart-card">
         <h3>🔺 Kemiringan Tanah (°)</h3>
@@ -175,19 +241,33 @@
     </div>
   </section>
 
-  <!-- ============================== -->
-  <!-- FOOTER                         -->
-  <!-- ============================== -->
-  <footer>
-    <p>© 2026 PKM Margorejo — Sistem Peringatan Dini Tanah Longsor | Sampok, Sriharjo, Imogiri, Bantul, DIY</p>
+  <!-- ============================================================
+       FOOTER
+       ============================================================ -->
+  <footer class="site-footer">
+    <div class="footer-left">
+      ⚠️ <strong>EWS Lab Riset Elektronika dan Instrumentasi</strong>
+    </div>
+    <div class="footer-center">
+      Landslide Early Warning System — Sampok, Sriharjo, Imogiri, Bantul, DIY
+    </div>
+    <div class="footer-right">
+      Lab Riset Elektronika &amp; Instrumentasi — Universitas Gadjah Mada &copy; 2026
+    </div>
   </footer>
 
-  <!-- ============================== -->
-  <!-- SCRIPTS                        -->
-  <!-- ============================== -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+  <!-- ============================================================
+       EXTERNAL SCRIPTS
+       ============================================================ -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
           integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="js/app.js"></script>
+
+  <!-- Dashboard JS (dipisah per modul) -->
+  <script src="js/dashboard.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/chart.js"></script>
+  <script src="js/websocket.js"></script>
+
 </body>
 </html>
