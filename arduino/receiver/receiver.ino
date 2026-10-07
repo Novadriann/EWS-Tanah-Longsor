@@ -26,9 +26,9 @@
 // =====================================
 // ⚠️ KONFIGURASI JARINGAN (WAJIB DIUBAH!)
 // =====================================
-const char* ssid        = "WIFI_SSID";         // Ganti dengan nama WiFi kamu
-const char* password    = "WIFI_PASSWORD";      // Ganti dengan password WiFi
-const char* mqtt_server = "192.168.1.100";      // Ganti dengan IP laptop (CMD -> ipconfig)
+const char* ssid        = "Nova S24 FE";         // Ganti dengan nama WiFi kamu
+const char* password    = "terimakasih";      // Ganti dengan password WiFi
+const char* mqtt_server = "10.211.168.96";     // IP laptop di hotspot Nova S24 FE
 const int   mqtt_port   = 1883;                 // Port standar Mosquitto
 
 // =====================================

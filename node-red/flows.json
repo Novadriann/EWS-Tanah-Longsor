@@ -47,7 +47,7 @@
     "type": "comment",
     "z": "ews_tab_1",
     "name": "📡 DATA INGESTION & PARSING",
-    "info": "Menerima data LoRa dari MQTT dan parsing ke JSON",
+    "info": "Menerima data LoRa dari MQTT dan parsing ke JSON\nFormat: NODE_X,SOIL:val,HALL:val,MAG:val,TIP:val,TILT:val,RAIN:val,TEMP:val,HUM:val,ALERT:val,RSSI:val,SNR:val",
     "x": 180,
     "y": 40,
     "wires": []
@@ -77,15 +77,15 @@
     "id": "parse_func_1",
     "type": "function",
     "z": "ews_tab_1",
-    "name": "⚙️ Parse Data LoRa",
-    "func": "// Parse format: NODE_1,SOIL:65,HALL:1,MAG:0,TIP:12,TILT:26.91,RAIN:44.04,RSSI:-65,SNR:8.5\nvar raw = msg.payload;\n\ntry {\n    var parts = raw.split(',');\n    if (parts.length < 6) {\n        node.warn('Format data tidak valid: ' + raw);\n        return null;\n    }\n    \n    var data = {\n        node: parts[0].trim()\n    };\n    \n    // Parse key:value pairs\n    for (var i = 1; i < parts.length; i++) {\n        var kv = parts[i].split(':');\n        if (kv.length === 2) {\n            var key = kv[0].trim().toLowerCase();\n            var val = kv[1].trim();\n            \n            if (key === 'soil' || key === 'hall' || key === 'mag' || key === 'tip' || key === 'rssi') {\n                data[key] = parseInt(val) || 0;\n            } else if (key === 'tilt' || key === 'rain' || key === 'snr') {\n                data[key] = parseFloat(val) || 0;\n            }\n        }\n    }\n    \n    // Tambahkan timestamp\n    data.timestamp = new Date().toISOString();\n    \n    // Pastikan semua field ada\n    data.soil = data.soil || 0;\n    data.hall = data.hall || 0;\n    data.mag = data.mag || 0;\n    data.tip = data.tip || 0;\n    data.tilt = data.tilt || 0;\n    data.rain = data.rain || 0;\n    data.rssi = data.rssi || 0;\n    data.snr = data.snr || 0;\n    \n    msg.payload = data;\n    return msg;\n    \n} catch (e) {\n    node.error('Error parsing: ' + e.message);\n    return null;\n}",
+    "name": "⚙️ Parse Data LoRa (v2 + DHT22 + Alert)",
+    "func": "// Parse format: NODE_1,SOIL:65,HALL:1,MAG:0,TIP:12,TILT:26.91,RAIN:44.04,TEMP:28.5,HUM:75.2,ALERT:0,RSSI:-65,SNR:8.5\nvar raw = msg.payload;\n\ntry {\n    var parts = raw.split(',');\n    if (parts.length < 6) {\n        node.warn('Format data tidak valid: ' + raw);\n        return null;\n    }\n    \n    var data = {\n        node: parts[0].trim()\n    };\n    \n    // Parse key:value pairs\n    for (var i = 1; i < parts.length; i++) {\n        var kv = parts[i].split(':');\n        if (kv.length === 2) {\n            var key = kv[0].trim().toLowerCase();\n            var val = kv[1].trim();\n            \n            if (key === 'soil' || key === 'hall' || key === 'mag' || key === 'tip' || key === 'rssi' || key === 'alert') {\n                data[key] = parseInt(val) || 0;\n            } else if (key === 'tilt' || key === 'rain' || key === 'snr' || key === 'temp' || key === 'hum') {\n                data[key] = parseFloat(val) || 0;\n            }\n        }\n    }\n    \n    // Tambahkan timestamp\n    data.timestamp = new Date().toISOString();\n    \n    // Pastikan semua field ada (termasuk field baru)\n    data.soil = data.soil || 0;\n    data.hall = data.hall || 0;\n    data.mag = data.mag || 0;\n    data.tip = data.tip || 0;\n    data.tilt = data.tilt || 0;\n    data.rain = data.rain || 0;\n    data.rssi = data.rssi || 0;\n    data.snr = data.snr || 0;\n    data.temp = data.temp || 0;\n    data.hum = data.hum || 0;\n    data.alert = data.alert || 0;\n    \n    msg.payload = data;\n    return msg;\n    \n} catch (e) {\n    node.error('Error parsing: ' + e.message);\n    return null;\n}",
     "outputs": 1,
     "timeout": "",
     "noerr": 0,
     "initialize": "",
     "finalize": "",
     "libs": [],
-    "x": 390,
+    "x": 430,
     "y": 100,
     "wires": [
       ["ws_out_1", "build_insert_1", "alert_func_1", "debug_1"]
@@ -103,7 +103,7 @@
     "tostatus": false,
     "complete": "payload",
     "targetType": "msg",
-    "x": 630,
+    "x": 690,
     "y": 40,
     "wires": []
   },
@@ -113,7 +113,7 @@
     "type": "comment",
     "z": "ews_tab_1",
     "name": "🌐 WEBSOCKET (Real-time ke Web)",
-    "info": "Kirim data real-time ke dashboard web via WebSocket",
+    "info": "Kirim data real-time ke dashboard web via WebSocket\nSekarang termasuk data suhu, kelembaban, dan status alert",
     "x": 190,
     "y": 190,
     "wires": []
@@ -136,7 +136,7 @@
     "type": "comment",
     "z": "ews_tab_1",
     "name": "💾 DATABASE (Simpan ke SQLite)",
-    "info": "Simpan semua data sensor ke database untuk historis",
+    "info": "Simpan semua data sensor ke database untuk historis\nTabel v2: ditambah kolom temp, hum, alert",
     "x": 190,
     "y": 300,
     "wires": []
@@ -146,8 +146,8 @@
     "id": "build_insert_1",
     "type": "function",
     "z": "ews_tab_1",
-    "name": "💾 Build INSERT SQL",
-    "func": "var d = msg.payload;\n\nmsg.topic = \"INSERT INTO sensor_data (node, soil, hall, mag, tip, tilt, rain, rssi, snr, timestamp) VALUES ('\" \n    + d.node + \"', \" \n    + d.soil + \", \" \n    + d.hall + \", \" \n    + d.mag + \", \" \n    + d.tip + \", \" \n    + d.tilt + \", \" \n    + (d.rain || 0) + \", \" \n    + (d.rssi || 0) + \", \" \n    + (d.snr || 0) + \", '\" \n    + d.timestamp + \"')\";\n\nreturn msg;",
+    "name": "💾 Build INSERT SQL (v2)",
+    "func": "var d = msg.payload;\n\nmsg.topic = \"INSERT INTO sensor_data (node, soil, hall, mag, tip, tilt, rain, temp, hum, alert, rssi, snr, timestamp) VALUES ('\" \n    + d.node + \"', \" \n    + d.soil + \", \" \n    + d.hall + \", \" \n    + d.mag + \", \" \n    + d.tip + \", \" \n    + d.tilt + \", \" \n    + (d.rain || 0) + \", \" \n    + (d.temp || 0) + \", \" \n    + (d.hum || 0) + \", \" \n    + (d.alert || 0) + \", \" \n    + (d.rssi || 0) + \", \" \n    + (d.snr || 0) + \", '\" \n    + d.timestamp + \"')\";\n\nreturn msg;",
     "outputs": 1,
     "timeout": "",
     "noerr": 0,
@@ -180,7 +180,7 @@
     "id": "inject_startup_1",
     "type": "inject",
     "z": "ews_tab_1",
-    "name": "🚀 Startup (Buat Tabel)",
+    "name": "🚀 Startup (Buat/Update Tabel)",
     "props": [
       {
         "p": "topic",
@@ -191,11 +191,68 @@
     "crontab": "",
     "once": true,
     "onceDelay": "0.5",
-    "topic": "CREATE TABLE IF NOT EXISTS sensor_data (id INTEGER PRIMARY KEY AUTOINCREMENT, node TEXT, soil INTEGER, hall INTEGER, mag INTEGER, tip INTEGER, tilt REAL, rain REAL, rssi INTEGER, snr REAL, timestamp TEXT)",
-    "x": 180,
+    "topic": "CREATE TABLE IF NOT EXISTS sensor_data (id INTEGER PRIMARY KEY AUTOINCREMENT, node TEXT, soil INTEGER, hall INTEGER, mag INTEGER, tip INTEGER, tilt REAL, rain REAL, temp REAL DEFAULT 0, hum REAL DEFAULT 0, alert INTEGER DEFAULT 0, rssi INTEGER, snr REAL, timestamp TEXT)",
+    "x": 190,
     "y": 420,
     "wires": [
       ["sqlite_create_1"]
+    ]
+  },
+
+  {
+    "id": "inject_migrate_1",
+    "type": "inject",
+    "z": "ews_tab_1",
+    "name": "🔧 Migrate (Tambah Kolom Baru)",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "1",
+    "topic": "",
+    "x": 190,
+    "y": 480,
+    "wires": [
+      ["migrate_func_1"]
+    ]
+  },
+
+  {
+    "id": "migrate_func_1",
+    "type": "function",
+    "z": "ews_tab_1",
+    "name": "🔧 Migration SQL",
+    "func": "// Migrasi kolom baru untuk tabel yang sudah ada\n// ALTER TABLE tidak error jika kolom sudah ada (SQLite)\nvar migrations = [\n    \"ALTER TABLE sensor_data ADD COLUMN temp REAL DEFAULT 0\",\n    \"ALTER TABLE sensor_data ADD COLUMN hum REAL DEFAULT 0\",\n    \"ALTER TABLE sensor_data ADD COLUMN alert INTEGER DEFAULT 0\"\n];\n\n// Kirim satu per satu (SQLite tidak support multi-statement)\nvar msgs = migrations.map(function(sql) {\n    return { topic: sql };\n});\n\nreturn [msgs];",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 440,
+    "y": 480,
+    "wires": [
+      ["sqlite_migrate_1"]
+    ]
+  },
+
+  {
+    "id": "sqlite_migrate_1",
+    "type": "sqlite",
+    "z": "ews_tab_1",
+    "name": "💾 SQLite Migrate",
+    "mydb": "sqlite_db_1",
+    "sqlquery": "msg.topic",
+    "sql": "",
+    "x": 660,
+    "y": 480,
+    "wires": [
+      []
     ]
   },
 
@@ -223,7 +280,7 @@
     "tosidebar": true,
     "console": false,
     "tostatus": false,
-    "complete": "'Database EWS siap! Tabel sensor_data berhasil dibuat/diperiksa.'",
+    "complete": "'Database EWS v2 siap! Tabel sensor_data dengan kolom temp, hum, alert berhasil dibuat/diperiksa.'",
     "targetType": "jsonata",
     "statusVal": "",
     "statusType": "auto",
@@ -237,9 +294,9 @@
     "type": "comment",
     "z": "ews_tab_1",
     "name": "📱 TELEGRAM ALERT (dengan Cooldown 5 menit)",
-    "info": "Kirim peringatan ke Telegram saat kemiringan >= 45 derajat.\nCooldown 5 menit per node untuk menghindari spam.",
+    "info": "Kirim peringatan ke Telegram saat kemiringan >= 45 derajat.\nCooldown 5 menit per node untuk menghindari spam.\nSekarang menyertakan data suhu & kelembaban.",
     "x": 230,
-    "y": 510,
+    "y": 570,
     "wires": []
   },
 
@@ -247,16 +304,16 @@
     "id": "alert_func_1",
     "type": "function",
     "z": "ews_tab_1",
-    "name": "🚨 Alert Logic (Cooldown 5 menit)",
-    "func": "var data = msg.payload;\nvar nodeId = data.node;\nvar tilt = data.tilt;\nvar THRESHOLD = 45;  // Derajat\nvar COOLDOWN_MS = 5 * 60 * 1000;  // 5 menit\n\n// Cek apakah melebihi threshold\nif (tilt >= THRESHOLD) {\n    // Cek cooldown per node\n    var lastAlert = flow.get('lastAlert_' + nodeId) || 0;\n    var now = Date.now();\n    \n    if (now - lastAlert > COOLDOWN_MS) {\n        // Update waktu terakhir alert\n        flow.set('lastAlert_' + nodeId, now);\n        \n        // Buat pesan Telegram\n        var waktu = new Date().toLocaleString('id-ID', {\n            timeZone: 'Asia/Jakarta',\n            day: '2-digit',\n            month: '2-digit',\n            year: 'numeric',\n            hour: '2-digit',\n            minute: '2-digit',\n            second: '2-digit'\n        });\n        \n        var pesan = '🚨 *EWS ALERT - BAHAYA LONGSOR* 🚨\\n\\n'\n            + '⚠️ Kemiringan tanah mencapai *' + tilt.toFixed(2) + '°*!\\n\\n'\n            + '📍 *Lokasi:* ' + nodeId.replace('_', ' ') + ' — Sampok, Sriharjo, Imogiri\\n'\n            + '🔺 *Kemiringan:* ' + tilt.toFixed(2) + '°\\n'\n            + '💧 *Kelembapan:* ' + data.soil + '%\\n'\n            + '🌧️ *Curah Hujan:* ' + data.tip + ' tip (' + (data.tip * 3.67).toFixed(1) + ' ml)\\n'\n            + '📶 *RSSI:* ' + data.rssi + ' dBm\\n'\n            + '⏰ *Waktu:* ' + waktu + '\\n\\n'\n            + '⚠️ Segera lakukan evakuasi jika diperlukan!';\n        \n        msg.payload = {\n            chatId: '',  // ⚠️ ISI DENGAN CHAT ID TELEGRAM ANDA\n            type: 'message',\n            content: pesan,\n            options: {\n                parse_mode: 'Markdown'\n            }\n        };\n        \n        node.status({fill: 'red', shape: 'dot', text: 'Alert ' + nodeId + ' @ ' + tilt.toFixed(1) + '°'});\n        return msg;\n    } else {\n        // Cooldown aktif\n        var sisaCooldown = Math.ceil((COOLDOWN_MS - (now - lastAlert)) / 1000);\n        node.status({fill: 'yellow', shape: 'ring', text: 'Cooldown ' + nodeId + ': ' + sisaCooldown + 's'});\n        return null;\n    }\n}\n\n// Normal - tidak kirim\nnode.status({fill: 'green', shape: 'dot', text: nodeId + ': ' + tilt.toFixed(1) + '° (Normal)'});\nreturn null;",
+    "name": "🚨 Alert Logic (Cooldown 5 menit + DHT22)",
+    "func": "var data = msg.payload;\nvar nodeId = data.node;\nvar tilt = data.tilt;\nvar THRESHOLD = 45;  // Derajat\nvar COOLDOWN_MS = 5 * 60 * 1000;  // 5 menit\n\n// Cek apakah melebihi threshold\nif (tilt >= THRESHOLD) {\n    // Cek cooldown per node\n    var lastAlert = flow.get('lastAlert_' + nodeId) || 0;\n    var now = Date.now();\n    \n    if (now - lastAlert > COOLDOWN_MS) {\n        // Update waktu terakhir alert\n        flow.set('lastAlert_' + nodeId, now);\n        \n        // Buat pesan Telegram\n        var waktu = new Date().toLocaleString('id-ID', {\n            timeZone: 'Asia/Jakarta',\n            day: '2-digit',\n            month: '2-digit',\n            year: 'numeric',\n            hour: '2-digit',\n            minute: '2-digit',\n            second: '2-digit'\n        });\n        \n        var sirenStatus = data.alert ? '🔴 AKTIF' : '⚪ TIDAK AKTIF';\n        \n        var pesan = '🚨 *EWS ALERT - BAHAYA LONGSOR* 🚨\\n\\n'\n            + '⚠️ Kemiringan tanah mencapai *' + tilt.toFixed(2) + '°*!\\n\\n'\n            + '📍 *Lokasi:* ' + nodeId.replace('_', ' ') + ' — Sampok, Sriharjo, Imogiri\\n'\n            + '🔺 *Kemiringan:* ' + tilt.toFixed(2) + '°\\n'\n            + '💧 *Kelembapan Tanah:* ' + data.soil + '%\\n'\n            + '🌡️ *Suhu Udara:* ' + data.temp.toFixed(1) + '°C\\n'\n            + '💨 *Kelembapan Udara:* ' + data.hum.toFixed(1) + '%\\n'\n            + '🌧️ *Curah Hujan:* ' + data.tip + ' tip (' + (data.tip * 3.67).toFixed(1) + ' ml)\\n'\n            + '📶 *RSSI:* ' + data.rssi + ' dBm\\n'\n            + '🔊 *Sirene:* ' + sirenStatus + '\\n'\n            + '⏰ *Waktu:* ' + waktu + '\\n\\n'\n            + '⚠️ Segera lakukan evakuasi jika diperlukan!';\n        \n        msg.payload = {\n            chatId: '',  // ⚠️ ISI DENGAN CHAT ID TELEGRAM ANDA\n            type: 'message',\n            content: pesan,\n            options: {\n                parse_mode: 'Markdown'\n            }\n        };\n        \n        node.status({fill: 'red', shape: 'dot', text: 'Alert ' + nodeId + ' @ ' + tilt.toFixed(1) + '° | Siren: ' + sirenStatus});\n        return msg;\n    } else {\n        // Cooldown aktif\n        var sisaCooldown = Math.ceil((COOLDOWN_MS - (now - lastAlert)) / 1000);\n        node.status({fill: 'yellow', shape: 'ring', text: 'Cooldown ' + nodeId + ': ' + sisaCooldown + 's'});\n        return null;\n    }\n}\n\n// Normal - tidak kirim\nvar tempInfo = data.temp ? ' | ' + data.temp.toFixed(1) + '°C' : '';\nnode.status({fill: 'green', shape: 'dot', text: nodeId + ': ' + tilt.toFixed(1) + '° (Normal)' + tempInfo});\nreturn null;",
     "outputs": 1,
     "timeout": "",
     "noerr": 0,
     "initialize": "",
     "finalize": "",
     "libs": [],
-    "x": 710,
-    "y": 560,
+    "x": 730,
+    "y": 620,
     "wires": [
       ["telegram_send_1"]
     ]
@@ -270,8 +327,8 @@
     "bot": "",
     "haserroroutput": false,
     "outputs": 1,
-    "x": 990,
-    "y": 560,
+    "x": 1010,
+    "y": 620,
     "wires": [
       []
     ]
@@ -282,9 +339,9 @@
     "type": "comment",
     "z": "ews_tab_1",
     "name": "📊 API ENDPOINTS (untuk Chart historis)",
-    "info": "API untuk mengambil data historis dari database",
+    "info": "API untuk mengambil data historis dari database\nSekarang menyertakan data temp, hum, alert",
     "x": 210,
-    "y": 660,
+    "y": 720,
     "wires": []
   },
 
@@ -298,7 +355,7 @@
     "upload": false,
     "swaggerDoc": "",
     "x": 160,
-    "y": 720,
+    "y": 780,
     "wires": [
       ["query_history_func"]
     ]
@@ -317,7 +374,7 @@
     "finalize": "",
     "libs": [],
     "x": 410,
-    "y": 720,
+    "y": 780,
     "wires": [
       ["sqlite_query_history"]
     ]
@@ -332,7 +389,7 @@
     "sqlquery": "msg.topic",
     "sql": "",
     "x": 640,
-    "y": 720,
+    "y": 780,
     "wires": [
       ["format_history_resp"]
     ]
@@ -351,7 +408,7 @@
     "finalize": "",
     "libs": [],
     "x": 850,
-    "y": 720,
+    "y": 780,
     "wires": [
       ["http_history_resp"]
     ]
@@ -365,7 +422,7 @@
     "statusCode": "200",
     "headers": {},
     "x": 1050,
-    "y": 720,
+    "y": 780,
     "wires": []
   },
 
@@ -379,7 +436,7 @@
     "upload": false,
     "swaggerDoc": "",
     "x": 160,
-    "y": 800,
+    "y": 860,
     "wires": [
       ["query_latest_func"]
     ]
@@ -398,7 +455,7 @@
     "finalize": "",
     "libs": [],
     "x": 410,
-    "y": 800,
+    "y": 860,
     "wires": [
       ["sqlite_query_latest"]
     ]
@@ -413,7 +470,7 @@
     "sqlquery": "msg.topic",
     "sql": "",
     "x": 640,
-    "y": 800,
+    "y": 860,
     "wires": [
       ["format_latest_resp"]
     ]
@@ -432,7 +489,7 @@
     "finalize": "",
     "libs": [],
     "x": 850,
-    "y": 800,
+    "y": 860,
     "wires": [
       ["http_latest_resp"]
     ]
@@ -446,7 +503,7 @@
     "statusCode": "200",
     "headers": {},
     "x": 1050,
-    "y": 800,
+    "y": 860,
     "wires": []
   }
 ]
