@@ -1,8 +1,7 @@
 /*
  * ============================================
- * EWS MARGOREJO — TRANSMITTER NODE 1 (ULTRA RESPONSIVE)
+ * EWS MONITORING — TRANSMITTER NODE 1 (ULTRA RESPONSIVE)
  * Sistem Peringatan Dini Tanah Longsor
- * Sampok, Sriharjo, Imogiri, Bantul, DIY
  * ============================================
  * 
  * Versi Responsif Cepat:
@@ -315,7 +314,7 @@ void setup() {
   delay(1000);
   
   Serial.println("============================================");
-  Serial.println("EWS MARGOREJO — TRANSMITTER " + NODE_ID + " (FAST RESPONSIVE)");
+  Serial.println("EWS MONITORING — TRANSMITTER " + NODE_ID + " (FAST RESPONSIVE)");
   Serial.println("Interval Kirim: " + String(intervalSend) + "ms (1 Detik)");
   Serial.println("============================================");
 

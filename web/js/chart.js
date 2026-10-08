@@ -102,6 +102,13 @@ function baseChartOptions(yLabel, yMax) {
 /* --------------------------------------------------
    INIT CHARTS
    -------------------------------------------------- */
+function getNodeLabel(nodeId, defaultLabel) {
+  if (typeof CONFIG !== 'undefined' && CONFIG.NODES && CONFIG.NODES[nodeId] && CONFIG.NODES[nodeId].name) {
+    return CONFIG.NODES[nodeId].name;
+  }
+  return defaultLabel;
+}
+
 function initCharts() {
   var tiltCtx = document.getElementById('tiltChart');
   var soilCtx = document.getElementById('soilChart');
@@ -113,7 +120,7 @@ function initCharts() {
       labels:   [],
       datasets: [
         {
-          label:           'Node 1 — Sampok Utara',
+          label:           getNodeLabel('NODE_1', 'Node 1'),
           data:            [],
           borderColor:     COLORS.NODE_1.border,
           backgroundColor: COLORS.NODE_1.fill,
@@ -123,7 +130,7 @@ function initCharts() {
           tension:         0.35
         },
         {
-          label:           'Node 2 — Sampok Selatan',
+          label:           getNodeLabel('NODE_2', 'Node 2'),
           data:            [],
           borderColor:     COLORS.NODE_2.border,
           backgroundColor: COLORS.NODE_2.fill,
@@ -144,7 +151,7 @@ function initCharts() {
       labels:   [],
       datasets: [
         {
-          label:           'Node 1 — Sampok Utara',
+          label:           getNodeLabel('NODE_1', 'Node 1'),
           data:            [],
           borderColor:     COLORS.NODE_1.border,
           backgroundColor: COLORS.NODE_1.fill,
@@ -154,7 +161,7 @@ function initCharts() {
           tension:         0.35
         },
         {
-          label:           'Node 2 — Sampok Selatan',
+          label:           getNodeLabel('NODE_2', 'Node 2'),
           data:            [],
           borderColor:     COLORS.NODE_2.border,
           backgroundColor: COLORS.NODE_2.fill,

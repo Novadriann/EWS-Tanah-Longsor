@@ -70,6 +70,16 @@ function initMap() {
     mapMarkers[nodeId] = marker;
     mapPopups[nodeId]  = popup;
   });
+
+  /* Auto fit bounds jika kedua node memiliki koordinat berbeda */
+  if (CONFIG.NODES.NODE_1.lat !== CONFIG.NODES.NODE_2.lat || CONFIG.NODES.NODE_1.lng !== CONFIG.NODES.NODE_2.lng) {
+    var initBounds = L.latLngBounds(
+      Object.keys(CONFIG.NODES).map(function (id) {
+        return [CONFIG.NODES[id].lat, CONFIG.NODES[id].lng];
+      })
+    );
+    leafletMap.fitBounds(initBounds.pad(0.3), { maxZoom: 19 });
+  }
 }
 
 /* --------------------------------------------------
@@ -171,6 +181,13 @@ function updateNodePosition(nodeId, lat, lng) {
   // Pindahkan marker
   if (mapMarkers[nodeId]) {
     mapMarkers[nodeId].setLatLng([lat, lng]);
+  }
+
+  // Refresh popup jika ada data
+  if (mapPopups[nodeId] && typeof state !== 'undefined' && state.nodeData && state.nodeData[nodeId]) {
+    var d = state.nodeData[nodeId];
+    var isDanger = d.tilt >= (CONFIG.TILT_THRESHOLD || 45);
+    mapPopups[nodeId].setContent(buildPopupContent(nodeId, d, isDanger));
   }
 
   // Re-center & fit peta ke semua node

@@ -3,9 +3,10 @@
 
 Sistem Early Warning System (EWS) untuk mendeteksi potensi tanah longsor menggunakan sensor kemiringan (ADXL345), curah hujan (tipping bucket), dan kelembapan tanah. Data dikirim via LoRa ke gateway, diteruskan ke Node-RED, dan ditampilkan secara real-time di web dashboard interaktif bertemakan cokelat/earth-tone.
 
-**📍 Lokasi:** Sampok, Sriharjo, Imogiri, Bantul, DIY  
 **🎓 Proyek:** PKM 2026  
 **🏫 Lab Riset Elektronika dan Instrumentasi — Universitas Gadjah Mada**
+
+> 📍 **Lokasi Modular:** Koordinat node sensor dapat diatur langsung dari dashboard web (tombol 📍 di header). Tidak ada lokasi yang di-hardcode — sistem bisa di-deploy di mana saja.
 
 ---
 
@@ -49,13 +50,13 @@ WEB EWS/
 │   │
 │   ├── css/                                    ← Stylesheet dipisah per halaman/fungsi
 │   │   ├── login.css                           ← Gaya khusus halaman login
-│   │   ├── dashboard.css                       ← Layout dashboard, sidebar, node card, chart
+│   │   ├── dashboard.css                       ← Layout dashboard, sidebar, node card, chart, modal lokasi
 │   │   └── map.css                             ← Gaya Leaflet map, marker, popup
 │   │
 │   └── js/                                     ← JavaScript dipisah per modul/fungsi
 │       ├── login.js                            ← Auth, toggle password, redirect
-│       ├── dashboard.js                        ← State, clock, alert banner, audio, offline
-│       ├── map.js                              ← Leaflet map init, marker, popup builder
+│       ├── dashboard.js                        ← State, clock, alert, lokasi modular (localStorage)
+│       ├── map.js                              ← Leaflet map init, marker, popup, updateNodePosition
 │       ├── chart.js                            ← Chart.js historis, threshold line plugin
 │       └── websocket.js                        ← Koneksi WebSocket Node-RED, auto-reconnect
 │
@@ -63,7 +64,32 @@ WEB EWS/
     └── flows.json                              ← Flow Node-RED (siap import)
 ```
 
-> ℹ️ **Catatan Revisi v2:** File web kini dipisahkan secara modular (1 file per fungsi/bahasa) untuk kemudahan pemeliharaan. File lama `style.css` dan `app.js` sudah dihapus dan digantikan oleh file-file di atas.
+> ℹ️ **Catatan Revisi v3:** Lokasi node kini bersifat **modular** — tidak ada nama lokasi spesifik yang di-hardcode. User mengatur koordinat langsung dari dashboard via tombol 📍, tersimpan di `localStorage` browser.
+
+---
+
+## 📍 Cara Mengatur Lokasi Node
+
+Sistem ini dirancang agar bisa di-deploy di **lokasi mana saja** tanpa perlu mengedit kode.
+
+### Langkah-langkah:
+1. Login ke dashboard web
+2. Klik tombol **📍** di header (sebelah tombol Telegram)
+3. Masukkan **Latitude** dan **Longitude** untuk masing-masing node
+4. (Opsional) Berikan **Nama Lokasi** untuk setiap node (misal: "Bukit Utara")
+5. Klik **💾 Simpan**
+
+### Apa yang terjadi setelah simpan:
+- Marker di peta otomatis berpindah ke koordinat baru
+- Peta otomatis zoom/fit ke area yang mencakup kedua node
+- Nama node di sidebar card & popup peta berubah sesuai input
+- Koordinat ditampilkan di panel keterangan (legend)
+- Pengaturan tersimpan di `localStorage` browser — tetap ada meski halaman di-refresh
+
+### Validasi:
+- Latitude: -90 s/d 90
+- Longitude: -180 s/d 180
+- Nama lokasi maksimal 40 karakter (opsional, default: "Node 1" / "Node 2")
 
 ---
 
@@ -137,18 +163,17 @@ Edit file `settings.js` Node-RED:
 Cari baris yang mengandung `//httpStatic:`, hapus tanda `//` dan ubah nilainya:
 
 ```javascript
-httpStatic: 'D:/KULIAH/PKM - Margorejo/WEB EWS/web',
+httpStatic: 'D:/KULIAH/4. Project Lab ELINS/WEB EWS/web',
 ```
 
 > ⚠️ **Sesuaikan path dengan lokasi folder `web` di komputermu!**  
 > Gunakan forward slash (`/`) bukan backslash (`\`).  
-> Konfigurasi ini sudah dilakukan jika mengikuti setup sebelumnya — cukup verifikasi saja.
 
 ### Langkah 5 — Salin & Import Flow Node-RED
 
 **Cara tercepat (salin file langsung):**
 ```powershell
-Copy-Item "d:\KULIAH\PKM - Margorejo\WEB EWS\node-red\flows.json" "$env:USERPROFILE\.node-red\flows.json" -Force
+Copy-Item "d:\KULIAH\4. Project Lab ELINS\WEB EWS\node-red\flows.json" "$env:USERPROFILE\.node-red\flows.json" -Force
 ```
 
 **Atau via UI Node-RED (jika sudah ada flow lain):**
@@ -307,6 +332,7 @@ NODE_1,SOIL:65,HALL:1,MAG:0,TIP:12,TILT:26.91,RAIN:44.04,RSSI:-65,SNR:8.5
 | Data tidak tampil di web | Flow belum di-deploy | Buka Node-RED → klik Deploy |
 | Telegram "fetch failed" | Token/Chat ID kosong | Isi token & chat ID di node Telegram |
 | Suara alert tidak bunyi | Browser memblokir audio | Klik area manapun di halaman terlebih dahulu |
+| Lokasi/koordinat hilang setelah ganti browser | localStorage per-browser | Atur ulang koordinat via tombol 📍 di header |
 
 ---
 
@@ -315,8 +341,8 @@ NODE_1,SOIL:65,HALL:1,MAG:0,TIP:12,TILT:26.91,RAIN:44.04,RSSI:-65,SNR:8.5
 | File | Fungsi |
 |------|--------|
 | `js/login.js` | Cek sesi, validasi form login, redirect ke dashboard |
-| `js/dashboard.js` | Manajemen state sensor, update sidebar, alert banner, suara, deteksi offline |
-| `js/map.js` | Inisialisasi Leaflet, buat/update marker & popup per node |
+| `js/dashboard.js` | Manajemen state sensor, update sidebar, alert banner, suara, deteksi offline, **settings lokasi modular (localStorage)** |
+| `js/map.js` | Inisialisasi Leaflet, buat/update marker & popup per node, **updateNodePosition (reposisi dinamis)** |
 | `js/chart.js` | Inisialisasi Chart.js, fetch `/api/history`, tampilkan grafik kemiringan & kelembapan |
 | `js/websocket.js` | Koneksi WebSocket ke Node-RED, auto-reconnect 3 detik, panggil `updateDashboard()` |
 
@@ -324,5 +350,5 @@ NODE_1,SOIL:65,HALL:1,MAG:0,TIP:12,TILT:26.91,RAIN:44.04,RSSI:-65,SNR:8.5
 
 ## 📄 Lisensi
 
-MIT License — PKM Margorejo 2026  
+MIT License — PKM 2026  
 Lab Riset Elektronika dan Instrumentasi — Universitas Gadjah Mada

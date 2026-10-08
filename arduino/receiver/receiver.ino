@@ -1,8 +1,7 @@
 /*
  * ============================================
- * EWS MARGOREJO — RECEIVER (GATEWAY)
+ * EWS MONITORING — RECEIVER (GATEWAY)
  * Sistem Peringatan Dini Tanah Longsor
- * Sampok, Sriharjo, Imogiri, Bantul, DIY
  * ============================================
  * 
  * Hardware: LILYGO TTGO T-BEAM V1.2
@@ -132,7 +131,7 @@ void setup() {
   delay(1000);
   
   Serial.println("============================================");
-  Serial.println("EWS MARGOREJO — RECEIVER GATEWAY");
+  Serial.println("EWS MONITORING — RECEIVER GATEWAY");
   Serial.println("Sistem Peringatan Dini Tanah Longsor");
   Serial.println("============================================");
 

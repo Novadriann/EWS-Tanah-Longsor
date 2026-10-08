@@ -335,6 +335,17 @@ function saveLocationSettings() {
 function updateNodeLabels() {
   setText('nameNode1', CONFIG.NODES.NODE_1.name);
   setText('nameNode2', CONFIG.NODES.NODE_2.name);
+  // Update dataset labels di chart jika sudah diinisialisasi
+  if (typeof tiltChart !== 'undefined' && tiltChart && tiltChart.data && tiltChart.data.datasets && tiltChart.data.datasets.length >= 2) {
+    tiltChart.data.datasets[0].label = CONFIG.NODES.NODE_1.name;
+    tiltChart.data.datasets[1].label = CONFIG.NODES.NODE_2.name;
+    tiltChart.update();
+  }
+  if (typeof soilChart !== 'undefined' && soilChart && soilChart.data && soilChart.data.datasets && soilChart.data.datasets.length >= 2) {
+    soilChart.data.datasets[0].label = CONFIG.NODES.NODE_1.name;
+    soilChart.data.datasets[1].label = CONFIG.NODES.NODE_2.name;
+    soilChart.update();
+  }
   // Update koordinat di legend
   var coordEl = document.getElementById('legendCoords');
   if (coordEl) {

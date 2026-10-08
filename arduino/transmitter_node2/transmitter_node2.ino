@@ -1,8 +1,7 @@
 /*
  * ============================================
- * EWS MARGOREJO — TRANSMITTER NODE 2
+ * EWS MONITORING — TRANSMITTER NODE 2
  * Sistem Peringatan Dini Tanah Longsor
- * Sampok, Sriharjo, Imogiri, Bantul, DIY
  * ============================================
  * 
  * KODE UNTUK NODE 2
@@ -237,7 +236,7 @@ void setup() {
   delay(1500);
   
   Serial.println("============================================");
-  Serial.println("EWS MARGOREJO — TRANSMITTER " + NODE_ID);
+  Serial.println("EWS MONITORING — TRANSMITTER " + NODE_ID);
   Serial.println("Interval: 5300ms (offset dari NODE_1)");
   Serial.println("+ DHT22 + Sirene + Lampu Indikator");
   Serial.println("============================================");
