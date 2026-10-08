@@ -43,17 +43,15 @@
     <div class="marquee-track-wrapper">
       <div class="marquee-track">
         <span class="marquee-text">
-          🚨 SISTEM EWS AKTIF — Pemantauan tanah longsor 24/7 di Sampok, Sriharjo, Imogiri, Bantul, DIY &nbsp;|&nbsp;
+          🚨 SISTEM EWS AKTIF — Pemantauan tanah longsor 24/7 &nbsp;|&nbsp;
           ⛰️ Waspadai Potensi Longsor — Segera evakuasi jika tanah bergerak atau muncul retakan &nbsp;|&nbsp;
           📡 Sinyal LoRa terhubung aktif antar node sensor &nbsp;|&nbsp;
           🌧️ Hujan lebat meningkatkan risiko pergerakan tanah — Pantau terus sistem ini &nbsp;|&nbsp;
-          📞 Darurat Bencana: BPBD Bantul (0274) 367626 &nbsp;|&nbsp;
           🏫 Lab Riset Elektronika dan Instrumentasi — Universitas Gadjah Mada &nbsp;|&nbsp;
-          🚨 SISTEM EWS AKTIF — Pemantauan tanah longsor 24/7 di Sampok, Sriharjo, Imogiri, Bantul, DIY &nbsp;|&nbsp;
+          🚨 SISTEM EWS AKTIF — Pemantauan tanah longsor 24/7 &nbsp;|&nbsp;
           ⛰️ Waspadai Potensi Longsor — Segera evakuasi jika tanah bergerak atau muncul retakan &nbsp;|&nbsp;
           📡 Sinyal LoRa terhubung aktif antar node sensor &nbsp;|&nbsp;
           🌧️ Hujan lebat meningkatkan risiko pergerakan tanah — Pantau terus sistem ini &nbsp;|&nbsp;
-          📞 Darurat Bencana: BPBD Bantul (0274) 367626 &nbsp;|&nbsp;
           🏫 Lab Riset Elektronika dan Instrumentasi — Universitas Gadjah Mada &nbsp;|&nbsp;
         </span>
       </div>
@@ -68,7 +66,7 @@
       <span class="header-logo">⚠️</span>
       <div class="header-brand-text">
         <div class="header-title">EWS Lab Riset Elektronika dan Instrumentasi</div>
-        <div class="header-subtitle">Sistem Peringatan Dini Tanah Longsor — Sampok, Sriharjo, Imogiri</div>
+        <div class="header-subtitle">Sistem Peringatan Dini Tanah Longsor</div>
       </div>
     </div>
 
@@ -79,6 +77,7 @@
       </div>
       <div class="header-clock" id="clock">--:--:--</div>
       <button id="btnMute" class="btn-icon-ctrl" onclick="toggleMute()" title="Mute/Unmute alert">🔔</button>
+      <button class="btn-icon-ctrl" onclick="openLocationSettings()" title="Atur Lokasi Node">📍</button>
       <a href="https://t.me/YourBotUsername" target="_blank" rel="noopener noreferrer"
          class="btn-telegram-header" title="Buka Telegram Bot">
         <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
@@ -107,7 +106,7 @@
           </div>
           <div class="node-status-chip normal" id="chipNode1">✅ Normal</div>
         </div>
-        <div class="node-card-name">Sampok Utara</div>
+        <div class="node-card-name" id="nameNode1">Node 1</div>
 
         <div class="sensor-grid">
           <div class="sensor-item">
@@ -168,7 +167,7 @@
           </div>
           <div class="node-status-chip normal" id="chipNode2">✅ Normal</div>
         </div>
-        <div class="node-card-name">Sampok Selatan</div>
+        <div class="node-card-name" id="nameNode2">Node 2</div>
 
         <div class="sensor-grid">
           <div class="sensor-item">
@@ -234,7 +233,7 @@
         </div>
         <hr class="legend-divider" />
         <div class="legend-meta">
-          <div>📍 Sampok, Sriharjo, Imogiri, Bantul</div>
+          <div id="legendCoords">📍 Koordinat belum diatur</div>
           <div>🌧️ 1 tip = 3,67 ml</div>
           <div>📡 LoRa 922 MHz</div>
         </div>
@@ -277,7 +276,7 @@
       ⚠️ <strong>EWS Lab Riset Elektronika dan Instrumentasi</strong>
     </div>
     <div class="footer-center">
-      Landslide Early Warning System — Sampok, Sriharjo, Imogiri, Bantul, DIY
+      Landslide Early Warning System
     </div>
     <div class="footer-right">
       Lab Riset Elektronika &amp; Instrumentasi — Universitas Gadjah Mada &copy; 2026
@@ -296,6 +295,66 @@
   <script src="js/map.js"></script>
   <script src="js/chart.js"></script>
   <script src="js/websocket.js"></script>
+
+  <!-- ============================================================
+       LOCATION SETTINGS MODAL
+       ============================================================ -->
+  <div id="locationModal" class="loc-modal-overlay">
+    <div class="loc-modal">
+      <div class="loc-modal-header">
+        <h3>📍 Atur Lokasi Node</h3>
+        <button class="loc-modal-close" onclick="closeLocationSettings()">✕</button>
+      </div>
+      <div class="loc-modal-body">
+        <!-- Node 1 -->
+        <div class="loc-node-group">
+          <div class="loc-node-title">Node 1</div>
+          <div class="loc-input-row">
+            <div class="loc-input-field">
+              <label for="lat1">Latitude</label>
+              <input type="number" id="lat1" step="any" min="-90" max="90" placeholder="-7.941043" />
+            </div>
+            <div class="loc-input-field">
+              <label for="lng1">Longitude</label>
+              <input type="number" id="lng1" step="any" min="-180" max="180" placeholder="110.404573" />
+            </div>
+          </div>
+          <div class="loc-input-field loc-name-field">
+            <label for="name1">Nama Lokasi <span class="loc-optional">(opsional)</span></label>
+            <input type="text" id="name1" placeholder="Contoh: Bukit Utara" maxlength="40" />
+          </div>
+        </div>
+
+        <!-- Node 2 -->
+        <div class="loc-node-group">
+          <div class="loc-node-title">Node 2</div>
+          <div class="loc-input-row">
+            <div class="loc-input-field">
+              <label for="lat2">Latitude</label>
+              <input type="number" id="lat2" step="any" min="-90" max="90" placeholder="-7.941133" />
+            </div>
+            <div class="loc-input-field">
+              <label for="lng2">Longitude</label>
+              <input type="number" id="lng2" step="any" min="-180" max="180" placeholder="110.404663" />
+            </div>
+          </div>
+          <div class="loc-input-field loc-name-field">
+            <label for="name2">Nama Lokasi <span class="loc-optional">(opsional)</span></label>
+            <input type="text" id="name2" placeholder="Contoh: Bukit Selatan" maxlength="40" />
+          </div>
+        </div>
+
+        <div class="loc-hint">
+          💡 Latitude: -90 s/d 90 &nbsp;|&nbsp; Longitude: -180 s/d 180<br/>
+          Koordinat tersimpan di browser ini (localStorage).
+        </div>
+      </div>
+      <div class="loc-modal-footer">
+        <button class="loc-btn-cancel" onclick="closeLocationSettings()">Batal</button>
+        <button class="loc-btn-save" onclick="saveLocationSettings()">💾 Simpan</button>
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>

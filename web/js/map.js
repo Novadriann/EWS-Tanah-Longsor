@@ -161,6 +161,30 @@ function updateMapMarker(nodeId, d, isDanger, isOffline) {
 }
 
 /* --------------------------------------------------
+   UPDATE NODE POSITION — dipanggil dari dashboard.js
+   saat user mengubah koordinat di Settings
+   -------------------------------------------------- */
+function updateNodePosition(nodeId, lat, lng) {
+  CONFIG.NODES[nodeId].lat = lat;
+  CONFIG.NODES[nodeId].lng = lng;
+
+  // Pindahkan marker
+  if (mapMarkers[nodeId]) {
+    mapMarkers[nodeId].setLatLng([lat, lng]);
+  }
+
+  // Re-center & fit peta ke semua node
+  if (leafletMap) {
+    var bounds = L.latLngBounds(
+      Object.keys(CONFIG.NODES).map(function (id) {
+        return [CONFIG.NODES[id].lat, CONFIG.NODES[id].lng];
+      })
+    );
+    leafletMap.fitBounds(bounds.pad(0.3), { maxZoom: 19 });
+  }
+}
+
+/* --------------------------------------------------
    START
    -------------------------------------------------- */
 document.addEventListener('DOMContentLoaded', initMap);

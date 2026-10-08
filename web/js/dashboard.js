@@ -32,21 +32,43 @@ const CONFIG = {
   OFFLINE_TIMEOUT:   30000,  // 30 detik → offline
   NODES: {
     NODE_1: {
-      lat:       -7.941043,
-      lng:       110.404573,
-      name:      'Sampok Utara',
+      lat:       -7.77,
+      lng:       110.37,
+      name:      'Node 1',
       shortName: 'Node 1',
       number:    '1'
     },
     NODE_2: {
-      lat:       -7.941133,
-      lng:       110.404663,
-      name:      'Sampok Selatan',
+      lat:       -7.77,
+      lng:       110.37,
+      name:      'Node 2',
       shortName: 'Node 2',
       number:    '2'
     }
   }
 };
+
+/* --------------------------------------------------
+   LOAD NODE CONFIG FROM localStorage
+   -------------------------------------------------- */
+(function loadNodeConfig() {
+  var saved = localStorage.getItem('ews_node_config');
+  if (saved) {
+    try {
+      var parsed = JSON.parse(saved);
+      Object.keys(parsed).forEach(function (nodeId) {
+        if (CONFIG.NODES[nodeId]) {
+          if (parsed[nodeId].lat !== undefined) CONFIG.NODES[nodeId].lat = parsed[nodeId].lat;
+          if (parsed[nodeId].lng !== undefined) CONFIG.NODES[nodeId].lng = parsed[nodeId].lng;
+          if (parsed[nodeId].name) {
+            CONFIG.NODES[nodeId].name      = parsed[nodeId].name;
+            CONFIG.NODES[nodeId].shortName = parsed[nodeId].name;
+          }
+        }
+      });
+    } catch (e) { /* abaikan JSON tidak valid */ }
+  }
+})();
 
 /* --------------------------------------------------
    SHARED STATE
@@ -243,3 +265,85 @@ function setText(id, value) {
   var el = document.getElementById(id);
   if (el) el.textContent = value;
 }
+
+/* --------------------------------------------------
+   LOCATION SETTINGS MODAL
+   -------------------------------------------------- */
+function openLocationSettings() {
+  var modal = document.getElementById('locationModal');
+  if (!modal) return;
+  // Isi field dari CONFIG saat ini
+  document.getElementById('lat1').value = CONFIG.NODES.NODE_1.lat;
+  document.getElementById('lng1').value = CONFIG.NODES.NODE_1.lng;
+  document.getElementById('name1').value = CONFIG.NODES.NODE_1.name;
+  document.getElementById('lat2').value = CONFIG.NODES.NODE_2.lat;
+  document.getElementById('lng2').value = CONFIG.NODES.NODE_2.lng;
+  document.getElementById('name2').value = CONFIG.NODES.NODE_2.name;
+  modal.classList.add('active');
+}
+
+function closeLocationSettings() {
+  var modal = document.getElementById('locationModal');
+  if (modal) modal.classList.remove('active');
+}
+
+function saveLocationSettings() {
+  var lat1  = parseFloat(document.getElementById('lat1').value);
+  var lng1  = parseFloat(document.getElementById('lng1').value);
+  var name1 = document.getElementById('name1').value.trim() || 'Node 1';
+  var lat2  = parseFloat(document.getElementById('lat2').value);
+  var lng2  = parseFloat(document.getElementById('lng2').value);
+  var name2 = document.getElementById('name2').value.trim() || 'Node 2';
+
+  // Validasi koordinat
+  if (isNaN(lat1) || lat1 < -90 || lat1 > 90 ||
+      isNaN(lng1) || lng1 < -180 || lng1 > 180 ||
+      isNaN(lat2) || lat2 < -90 || lat2 > 90 ||
+      isNaN(lng2) || lng2 < -180 || lng2 > 180) {
+    alert('Koordinat tidak valid!\nLatitude: -90 s/d 90\nLongitude: -180 s/d 180');
+    return;
+  }
+
+  // Update CONFIG
+  CONFIG.NODES.NODE_1.lat  = lat1;
+  CONFIG.NODES.NODE_1.lng  = lng1;
+  CONFIG.NODES.NODE_1.name = name1;
+  CONFIG.NODES.NODE_1.shortName = name1;
+  CONFIG.NODES.NODE_2.lat  = lat2;
+  CONFIG.NODES.NODE_2.lng  = lng2;
+  CONFIG.NODES.NODE_2.name = name2;
+  CONFIG.NODES.NODE_2.shortName = name2;
+
+  // Simpan ke localStorage
+  localStorage.setItem('ews_node_config', JSON.stringify({
+    NODE_1: { lat: lat1, lng: lng1, name: name1 },
+    NODE_2: { lat: lat2, lng: lng2, name: name2 }
+  }));
+
+  // Update label di sidebar card
+  updateNodeLabels();
+
+  // Update posisi marker di peta (map.js)
+  if (typeof updateNodePosition === 'function') {
+    updateNodePosition('NODE_1', lat1, lng1);
+    updateNodePosition('NODE_2', lat2, lng2);
+  }
+
+  closeLocationSettings();
+}
+
+function updateNodeLabels() {
+  setText('nameNode1', CONFIG.NODES.NODE_1.name);
+  setText('nameNode2', CONFIG.NODES.NODE_2.name);
+  // Update koordinat di legend
+  var coordEl = document.getElementById('legendCoords');
+  if (coordEl) {
+    coordEl.textContent =
+      'N1: ' + CONFIG.NODES.NODE_1.lat.toFixed(6) + ', ' + CONFIG.NODES.NODE_1.lng.toFixed(6) +
+      '  |  N2: ' + CONFIG.NODES.NODE_2.lat.toFixed(6) + ', ' + CONFIG.NODES.NODE_2.lng.toFixed(6);
+  }
+}
+
+/* Inisialisasi label saat halaman dimuat */
+document.addEventListener('DOMContentLoaded', updateNodeLabels);
+
