@@ -50,7 +50,7 @@ String NODE_ID = "NODE_2";  // <-- NODE 2
 #define I2C_SCL     4
 
 // DHT22 Sensor
-#define DHT_PIN     33
+#define DHT_PIN     25    // Dipindah ke GPIO 25 (Pin 33 adalah Lora_IO1 / DIO1 di T-Beam!)
 #define DHT_TYPE    DHT22
 
 // Sirene & Lampu Indikator (via transistor NPN)

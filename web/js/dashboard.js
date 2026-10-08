@@ -56,8 +56,8 @@ const state = {
   alertDismissed: false,
   alertPlayed: { NODE_1: false, NODE_2: false },
   nodeData: {
-    NODE_1: { tilt:0, soil:0, hall:0, mag:0, tip:0, rain:0, rssi:0, snr:0, timestamp:null, lastReceived:0 },
-    NODE_2: { tilt:0, soil:0, hall:0, mag:0, tip:0, rain:0, rssi:0, snr:0, timestamp:null, lastReceived:0 }
+    NODE_1: { tilt:0, soil:0, hall:0, mag:0, tip:0, rain:0, rssi:0, snr:0, temp:0, hum:0, timestamp:null, lastReceived:0 },
+    NODE_2: { tilt:0, soil:0, hall:0, mag:0, tip:0, rain:0, rssi:0, snr:0, temp:0, hum:0, timestamp:null, lastReceived:0 }
   }
 };
 
@@ -163,6 +163,8 @@ function updateDashboard(data) {
     rain:         parseFloat(data.rain)  || 0,
     rssi:         parseInt(data.rssi)    || 0,
     snr:          parseFloat(data.snr)   || 0,
+    temp:         parseFloat(data.temp)  || 0,
+    hum:          parseFloat(data.hum)   || 0,
     timestamp:    data.timestamp || new Date().toISOString(),
     lastReceived: Date.now()
   };
@@ -186,6 +188,8 @@ function updateDashboard(data) {
   setText('soil' + suffix, d.soil + '%');
   setText('rain' + suffix, d.tip + ' tip');
   setText('rssi' + suffix, d.rssi + ' dBm');
+  setText('temp' + suffix, d.temp.toFixed(1) + '°C');
+  setText('hum'  + suffix, d.hum.toFixed(1) + '%');
   setText('time' + suffix, new Date(d.timestamp).toLocaleTimeString('id-ID'));
 
   /* ---- Alert ---- */
